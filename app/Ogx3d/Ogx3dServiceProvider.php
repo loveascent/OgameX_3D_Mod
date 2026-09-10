@@ -102,6 +102,15 @@ class Ogx3dServiceProvider extends ServiceProvider
             ->where('version', '[a-z0-9]{1,16}')
             ->name('ogx3d.css');
 
+        // EVERY logged-in player, not just admins: "which version do I personally see"
+        // is a display preference, the same kind of choice as the language switcher
+        // sitting right next to it in the footer - it does not belong behind the admin
+        // bar just because that is where the admin screen happens to build it from.
+        Route::middleware(['web', 'auth', 'globalgame', 'locale'])
+            ->get('/ogx3d/choose/{version}', [Ogx3dAdminController::class, 'choose'])
+            ->where('version', '[a-z0-9]{1,16}')
+            ->name('ogx3d.choose');
+
         // The admin screen. Same guards the game's own admin pages use.
         Route::middleware(['web', 'auth', 'globalgame', 'locale', 'admin'])
             ->prefix('admin/ogx3d')

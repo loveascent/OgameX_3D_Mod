@@ -62,6 +62,51 @@ function addAdminLink() {
 }
 
 /* --------------------------------------------------------------------------
+ * 1b. The version switcher every player has
+ *
+ * "Which graphics version do I see" is a display preference like the language links
+ * sitting right beside it in the footer - not an admin setting, and not gated behind
+ * the admin bar just because that is where the admin screen happens to live. It is
+ * added next to those language links for the same reason the admin link is added
+ * next to the admin bar's own items: it inherits their styling for free and sits
+ * where a player already looks for "how this page appears to me" controls.
+ *
+ * Present on every page, including V1 ones - a V1 page still needs a way OFF V1 for
+ * players the admin has not made V2 the default for yet.
+ * ----------------------------------------------------------------------- */
+
+function addVersionSwitcher() {
+    const versions = LINKS.versions;
+    if (!versions || !LINKS.chooseBase) { return; }
+
+    const target = document.querySelector('#siteFooter .fright');
+    if (!target || target.querySelector('.ogx3d-switcher')) { return; }
+
+    const back = encodeURIComponent(location.href);
+    const keys = Object.keys(versions);
+    // Nothing to switch BETWEEN with only one entry - matches the server-side check
+    // that decided whether to send this list at all, kept here too in case a stale
+    // cached page still carries an old, longer list.
+    if (keys.length < 2) { return; }
+
+    const frag = document.createDocumentFragment();
+    keys.forEach((key) => {
+        const a = document.createElement('a');
+        a.href = LINKS.chooseBase + '/' + encodeURIComponent(key) + '?back=' + back;
+        a.textContent = key.toUpperCase();
+        a.title = versions[key];
+        if (key === LINKS.current) { a.className = 'bold'; }
+        frag.appendChild(a);
+        frag.appendChild(document.createTextNode('|'));
+    });
+
+    const wrap = document.createElement('span');
+    wrap.className = 'ogx3d-switcher';
+    wrap.appendChild(frag);
+    target.appendChild(wrap);
+}
+
+/* --------------------------------------------------------------------------
  * 2. The icons that are <img> tags
  *
  * The generated stylesheet reaches every icon painted as a css background, which is
@@ -247,12 +292,14 @@ function rescan(added) {
     setTimeout(() => {
         scheduled = false;
         addAdminLink();
+        addVersionSwitcher();
         mountAll();
     }, 0);
 }
 
 function start() {
     addAdminLink();
+    addVersionSwitcher();
     swapImagesIn(document);
     mountAll();
 

@@ -223,6 +223,38 @@ class Ogx3dAdminController extends OGameController
             ->with('success', 'This browser is now looking at ' . strtoupper($data['version']) . '. Other players are unaffected.');
     }
 
+    /**
+     * The switch every player has, not just admins: which graphics version THIS
+     * browser sees. A plain GET link, the same shape as the language switcher sitting
+     * right beside it (/lang/en) - a display preference needs no confirmation and no
+     * CSRF token, only somewhere to click.
+     *
+     * Setting the server's default is a different, heavier action and stays behind
+     * the admin screen; this one only ever touches the cookie in the browser that
+     * followed the link.
+     */
+    public function choose(Request $request, string $version): RedirectResponse
+    {
+        $chosen = $this->versions->exists($version) ? $version : Ogx3dVersions::ORIGINAL;
+
+        $back = (string) $request->query('back', '');
+        // Only ever back to an address on this server - a posted url is caller
+        // controlled, and "return to where I was" must not become "go anywhere".
+        $redirect = ($back !== '' && str_starts_with($back, $request->getSchemeAndHttpHost() . '/'))
+            ? redirect()->to($back)
+            : redirect()->route('options.index');
+
+        return $redirect->withCookie(new Cookie(
+            name: (string) config('ogx3d.cookie', 'ogx3d_variant'),
+            value: $chosen,
+            expire: time() + 60 * 60 * 24 * 365,
+            path: '/',
+            secure: false,
+            httpOnly: false,
+            raw: true,
+        ));
+    }
+
     /* =====================================================================
      * Assignments
      * ================================================================== */
