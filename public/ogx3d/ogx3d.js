@@ -203,10 +203,10 @@ function mount(host, spec) {
     loadViewer().then((mod) => {
         if (!box.isConnected) { return; }
         try {
-            mod.create(box, spec, MANIFEST.presets || {});
+            mod.create(box, spec, MANIFEST.presets || {}, (e) => backOut(host, box, e));
         } catch (e) {
             console.error('[ogx3d] viewer failed', e);
-            fail(box, e);
+            backOut(host, box, e);
         }
     }).catch((e) => {
         // The overwhelmingly likely cause is a missing import map: a page may carry
@@ -220,18 +220,33 @@ function mount(host, spec) {
         } else {
             console.error('[ogx3d] three.js could not be loaded', e);
         }
-        fail(box, e);
+        backOut(host, box, e);
     });
 }
 
-function fail(box, error) {
-    // textContent, never innerHTML: the message comes out of a loader and may contain
-    // anything at all, including a filename somebody chose.
-    const note = document.createElement('div');
-    note.style.cssText = 'color:#c66;font-size:11px;padding:8px;';
-    note.textContent = '3D: ' + (error && error.message ? error.message : String(error));
-    box.textContent = '';
-    box.appendChild(note);
+/**
+ * A viewer could not be built - a broken .glb, no WebGL2, three.js unreachable.
+ *
+ * The mount is an absolutely-positioned, full-cover <div> with `cursor: grab`: left
+ * in place after a failure it is an invisible sheet over whatever the game drew there
+ * - the tech-tree detail panel, the overview strip - swallowing every click. So the
+ * whole overlay is removed and the host handed back to the game exactly as it was:
+ * the `ogx3d-live` class and the inline `background-image:none` come off, so the
+ * game's own artwork paints again. The reason is on the console; nothing is left
+ * covering the page.
+ *
+ * The host keeps its `ogx3dClaimed` flag so the MutationObserver does not
+ * immediately try to mount it again and fail again in a loop.
+ */
+function backOut(host, box, error) {
+    console.error('[ogx3d] 3D view disabled here, original artwork restored:',
+        error && error.message ? error.message : error);
+    if (box && box.parentNode) { box.parentNode.removeChild(box); }
+    if (host) {
+        host.classList.remove('ogx3d-live');
+        host.style.removeProperty('background-image');
+        host.dataset.ogx3dFailed = '1';
+    }
 }
 
 function loadViewer() {

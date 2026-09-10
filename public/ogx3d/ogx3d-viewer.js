@@ -104,9 +104,20 @@ let maxAnisotropy = 1;
  * @param {HTMLElement} box    the element to render into, already sized by css
  * @param {object} spec        {model, preset, motion, spin, zoom, view, shadow}
  * @param {object} presets     the lighting presets, straight out of config/ogx3d.php
+ * @param {function=} onFail   called with the error if the model cannot be shown, so
+ *                             the caller can take its overlay back off the page
  * @returns {object} a handle with dispose()
  */
-export function create(box, spec, presets) {
+export function create(box, spec, presets, onFail) {
+    const reportFail = (error) => {
+        if (typeof onFail === 'function') { onFail(error); return; }
+        // No handler given (older caller): fall back to writing the reason in the box.
+        const note = document.createElement('div');
+        note.style.cssText = 'color:#c66;font-size:11px;padding:8px;';
+        note.textContent = '3D load error: ' + (error && error.message ? error.message : String(error));
+        box.textContent = '';
+        box.appendChild(note);
+    };
     const light = presets[spec.preset] || presets.studio || FALLBACK_PRESET;
     const iconAngle = (spec.view || 'icon') !== 'free';
     const zoom = Number(spec.zoom) > 0 ? Number(spec.zoom) : 1;
@@ -467,13 +478,14 @@ export function create(box, spec, presets) {
             // Tear down here too: a failed load used to leave a live WebGL context
             // behind for a viewer that would never draw anything.
             dispose();
-            const note = document.createElement('div');
-            note.style.cssText = 'color:#c66;font-size:11px;padding:8px;';
-            // textContent, not innerHTML - the message contains a filename somebody chose.
-            note.textContent = '3D load error: ' + (error && error.message ? error.message : String(error));
-            box.textContent = '';
-            box.appendChild(note);
+            reportFail(error);
         });
+    }).catch((error) => {
+        // sharedLoader() itself rejected - three.js addons unreachable, no WebGL2,
+        // KTX2/Draco import blocked. Nothing was mounted; hand the failure back so the
+        // caller removes its overlay rather than leaving a dead canvas host.
+        dispose();
+        reportFail(error);
     });
 
     /* ----------------------------------------------------------------------

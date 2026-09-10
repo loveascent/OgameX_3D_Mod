@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2026 <YOUR NAME HERE>
+Copyright (c) 2026 Ascend
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,3 +29,19 @@ under the MIT licence and is loaded from a CDN at runtime (or from a copy you
 download yourself into public/ogx3d/vendor/three/). It is not distributed here.
 
 OGameX is a separate project with its own licence and is not included here.
+
+
+----------------------------------------------------------------------------
+Disclaimer
+
+This software is an unofficial, fan-made add-on for OGameX.
+It is not affiliated with, endorsed by, or part of the OGameX project
+(https://github.com/lanedirt/OGameX) or GameForge GmbH.
+
+OGame and all related names, artwork and game concepts are the property
+of GameForge GmbH. OGameX is a separate open-source project licensed
+under the MIT licence and is not included in this repository.
+
+3D models, textures and icons that a server operator uploads are not
+part of this mod. The operator is responsible for having the rights to
+those files.

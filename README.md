@@ -1,6 +1,14 @@
 # OgameX 3D Mod
 
-**Swap any icon in [OGameX](https://github.com/lanedirt/ogamex) for your own picture, or for a live 3D model — from inside the game, without touching a single line of the game's code.**
+> **Unofficial fan add-on.** Not affiliated with [OGameX](https://github.com/lanedirt/OGameX)
+> or GameForge GmbH. OGame names, artwork and concepts belong to GameForge.
+> OGameX backend code belongs to its authors and is MIT-licensed; this repo
+> does not include it. Non-commercial. You bring your own models and icons —
+> only upload files you have the rights to.
+
+**Status:** alpha. Developed against **OGameX 0.14.x**. Expect rough edges.
+
+**Swap any icon in [OGameX](https://github.com/lanedirt/OGameX) for your own picture, or for a live 3D model — from inside the game, without touching a single line of the game's code.**
 
 ---
 
@@ -30,11 +38,15 @@ The mod never changes the game. It adds **versions**:
 | **V2** | A blank sheet of glass over it. Identical to V1 until you assign something. |
 | **V3, V4, …** | Press `+` for as many as you like. Each is independent; changing one cannot affect another. |
 
-You pick which version the whole server sees. You can preview a version in your own
-browser first, without anyone else noticing.
+There are two different choices, on purpose:
 
-That is the whole design: **a version you have not touched is the original game**, so
-there is no way to break the interface by experimenting.
+| Who | What they choose |
+|---|---|
+| **Admin** | Creates versions (`+`), assigns pictures/models, can **Preview** a version only in their own browser, then **Make live** as the server default. |
+| **Every logged-in player** | Gets a **V1 / V2 / V3…** switch next to their name in the top bar. That is a personal display preference (cookie). It does not change the server default and does not need admin rights. |
+
+V1 stays the original game. A version you have not assigned anything to also looks like
+the original game. Experimenting in V2 cannot break V1.
 
 ---
 
@@ -232,7 +244,15 @@ then delete `app/Ogx3d/`, `config/ogx3d*.php`, `public/ogx3d/`,
 
 MIT. See [LICENSE](LICENSE).
 
-This mod contains no artwork, no models and no third-party code. It is a mechanism for
-putting *your* files into OGameX; what you put in is yours, and stays yours.
+This repository contains only this add-on (PHP, Blade, JS, installer).
+It ships no OGameX source, no official OGame artwork, no 3D models and
+no third-party libraries. three.js is loaded from a CDN at runtime
+(or from a copy you place in `public/ogx3d/vendor/three/`) and remains
+copyright its own authors.
 
-OGameX itself is a separate project with its own licence and is not included here.
+OGameX: https://github.com/lanedirt/OGameX (MIT).
+OGame: https://ogame.org — please support the original creators.
+
+If you publish your own models with a server that uses this mod, state
+*their* licence separately. This MIT licence does not grant rights to
+anyone else's assets.
