@@ -57,7 +57,7 @@ You need an OGameX installation and shell access to it. Two minutes.
 **1. Get the files into your OGameX folder.**
 
 ```bash
-git clone https://github.com/YOUR-NAME/OgameX_3D_Mod.git /tmp/ogx3d && cp -r /tmp/ogx3d/{app,config,database,public} /tmp/ogx3d/ogx3d-install.* /path/to/your/ogamex/
+git clone https://github.com/loveascent/OgameX_3D_Mod.git /tmp/ogx3d && cp -r /tmp/ogx3d/{app,config,database,public} /tmp/ogx3d/ogx3d-install.* /path/to/your/ogamex/
 ```
 
 On Windows, or if you would rather not use git: download the ZIP from the green **Code**
