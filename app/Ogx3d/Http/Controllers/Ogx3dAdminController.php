@@ -259,7 +259,7 @@ class Ogx3dAdminController extends OGameController
      * Assignments
      * ================================================================== */
 
-    public function assign(Request $request): RedirectResponse
+    public function assign(Request $request): RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $data = $request->validate([
             'version' => ['required', 'string', 'max:16'],
@@ -278,10 +278,10 @@ class Ogx3dAdminController extends OGameController
         $target = $data['target'];
 
         if ($version === Ogx3dVersions::ORIGINAL || !$this->versions->exists($version)) {
-            return $this->back()->with('error', 'V1 is the original game and cannot be changed. Create a version first.');
+            return $this->respond($request, false, $version, 'V1 is the original game and cannot be changed. Create a version first.');
         }
         if (!$this->isKnownTarget($target)) {
-            return $this->back($version)->with('error', 'Unknown target: ' . $target);
+            return $this->respond($request, false, $version, 'Unknown target: ' . $target);
         }
 
         $attributes = [];
@@ -306,7 +306,7 @@ class Ogx3dAdminController extends OGameController
             );
         } elseif (($data['image'] ?? '') !== '') {
             if (!in_array($data['image'], $this->assets->availableIcons(), true)) {
-                return $this->back($version)->with('error', 'That icon is not in ' . config('ogx3d.icon_dir') . '.');
+                return $this->respond($request, false, $version, 'That icon is not in ' . config('ogx3d.icon_dir') . '.');
             }
             $attributes['image_path'] = $data['image'];
         } elseif ($request->boolean('clear_image')) {
@@ -321,7 +321,7 @@ class Ogx3dAdminController extends OGameController
             );
         } elseif (($data['model'] ?? '') !== '') {
             if (!in_array($data['model'], $this->assets->availableModels(), true)) {
-                return $this->back($version)->with('error', 'That model is not in ' . config('ogx3d.model_dir') . '.');
+                return $this->respond($request, false, $version, 'That model is not in ' . config('ogx3d.model_dir') . '.');
             }
             $attributes['model_path'] = $data['model'];
         } elseif ($request->boolean('clear_model')) {
@@ -330,7 +330,7 @@ class Ogx3dAdminController extends OGameController
 
         if (($data['preset'] ?? '') !== '') {
             if (!array_key_exists($data['preset'], $this->presetChoices())) {
-                return $this->back($version)->with('error', 'Unknown lighting preset.');
+                return $this->respond($request, false, $version, 'Unknown lighting preset.');
             }
             $attributes['model_preset'] = $data['preset'];
         }
@@ -345,7 +345,7 @@ class Ogx3dAdminController extends OGameController
         }
 
         if ($attributes === []) {
-            return $this->back($version)->with('error', 'Nothing chosen - no picture, no model, no setting.');
+            return $this->respond($request, false, $version, 'Nothing chosen - no picture, no model, no setting.');
         }
 
         Ogx3dOverride::updateOrCreate(
@@ -354,10 +354,17 @@ class Ogx3dAdminController extends OGameController
         );
         $this->assets->invalidate($version);
 
-        return $this->back($version)->with('success', $target . ' updated in ' . strtoupper($version) . '.');
+        $override = Ogx3dOverride::where('version_key', $version)->where('target', $target)->first();
+
+        return $this->respond($request, true, $version, $target . ' updated in ' . strtoupper($version) . '.', [
+            'target' => $target,
+            'image' => $override?->image_path,
+            'model' => $override?->model_path,
+            'assigned' => $override !== null,
+        ]);
     }
 
-    public function reset(Request $request): RedirectResponse
+    public function reset(Request $request): RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $data = $request->validate([
             'version' => ['required', 'string', 'max:16'],
@@ -372,8 +379,35 @@ class Ogx3dAdminController extends OGameController
             ->delete();
         $this->assets->invalidate($data['version']);
 
-        return $this->back($data['version'])
-            ->with('success', $data['target'] . ' is back to the original.');
+        return $this->respond($request, true, $data['version'], $data['target'] . ' is back to the original.', [
+            'target' => $data['target'],
+            'image' => null,
+            'model' => null,
+            'assigned' => false,
+        ]);
+    }
+
+    /**
+     * One card's Save used to be a form post that reloaded the WHOLE admin screen - a
+     * scroll position, a filter typed into the box above, every other card's unsaved
+     * choice, all thrown away to confirm ONE save. A screen with sixty-odd cards on it
+     * made changing a handful of them a fight against the page resetting itself.
+     *
+     * ogx3d.js now submits each card's form through fetch() instead of a real
+     * navigation, and asks for that here with the ajax-conventional header a plain
+     * <form> post never sends. A browser with JavaScript off, or a request from
+     * anywhere else, gets exactly the old behaviour: a full page reload back to this
+     * version, with the message in the flash banner.
+     */
+    private function respond(Request $request, bool $ok, string $version, string $message, array $extra = []): RedirectResponse|\Illuminate\Http\JsonResponse
+    {
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['ok' => $ok, 'message' => $message] + $extra, $ok ? 200 : 422);
+        }
+
+        return $ok
+            ? $this->back($version)->with('success', $message)
+            : $this->back($version)->with('error', $message);
     }
 
     /**
