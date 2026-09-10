@@ -5,6 +5,10 @@
 > OGameX backend code belongs to its authors and is MIT-licensed; this repo
 > does not include it. Non-commercial. You bring your own models and icons —
 > only upload files you have the rights to.
+>
+> The author of this add-on claims no rights over OGameX, OGame, GameForge, or
+> any of their code, assets or trademarks. This repository is only the add-on's
+> own source (PHP, Blade, JavaScript, installer), released under the MIT licence.
 
 **Status:** alpha. Developed against **OGameX 0.14.x**. Expect rough edges.
 
