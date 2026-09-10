@@ -90,22 +90,35 @@ class Ogx3dInject
     private function block(Request $request, string $html): string
     {
         $version = $this->versions->active();
+        $versions = $this->versions->all();
+        $isAdmin = str_contains($html, 'id="adminbar"');
 
         /*
-         * UNDER V1, A PLAYER GETS NOTHING AT ALL.
+         * NOTHING TO CHOOSE, NOTHING TO SHOW A PLAYER.
          *
-         * Not "an empty stylesheet" and not "a script that does nothing" - nothing. V1
-         * is the shipped game, and the way to be sure of that is for the mod to emit
-         * no byte into it.
+         * With only V1 in existence there is no second option to switch to, so the tiny
+         * per-player switcher (below) would be a link to nowhere. The one thing that
+         * still needs a way in is the admin screen itself - the only place a first
+         * version can be created - and that reaches an admin through the admin bar
+         * alone, nothing else.
+         */
+        if (count($versions) <= 1) {
+            return $isAdmin ? $this->lightweightBlock($request, true, null) : '';
+        }
+
+        /*
+         * UNDER V1 WITH OTHER VERSIONS TO OFFER, A PLAYER GETS THE SWITCH AND NOTHING
+         * ELSE.
          *
-         * An ADMIN is the one exception, and only for one line: without it there would
-         * be no way to reach the mod from a server sitting on V1, which is where every
-         * server starts. The signal used is the admin bar itself - if the game rendered
-         * one into this page, the reader is an admin, and no second permission check
-         * can disagree with the game's own answer.
+         * Which version to look at is a display preference, exactly like the language
+         * links sitting in the same footer - reachable by every player, not only by an
+         * admin, and not gated behind the admin bar just because that is where the
+         * admin screen happens to live. What the switch does NOT bring with it on V1 is
+         * the stylesheet, the manifest or three.js: V1 stays the byte-for-byte original
+         * except for this one small, inert link.
          */
         if ($version === Ogx3dVersions::ORIGINAL && !$request->is('admin/ogx3d*')) {
-            return str_contains($html, 'id="adminbar"') ? $this->adminLinkOnly() : '';
+            return $this->lightweightBlock($request, $isAdmin, $versions);
         }
 
         $stamp = $this->assets->stamp($version);
@@ -115,7 +128,7 @@ class Ogx3dInject
         $out[] = '<!-- OgameX 3D Mod -->';
         $out[] = '<link rel="stylesheet" href="' . e(route('ogx3d.css', ['version' => $version])) . '?v=' . $stamp . '">';
         $out[] = '<script type="application/json" id="ogx3d-manifest">' . $this->safeJson($manifest) . '</script>';
-        $out[] = '<script type="application/json" id="ogx3d-links">' . $this->safeJson($this->links()) . '</script>';
+        $out[] = '<script type="application/json" id="ogx3d-links">' . $this->safeJson($this->links($versions, $version)) . '</script>';
 
         // Only ONE import map is allowed per document, and a second one is a hard
         // error that takes the first one down with it. If the host page already has
@@ -133,32 +146,39 @@ class Ogx3dInject
     }
 
     /**
-     * The one line an admin gets while the server is still on V1: an entry in the
-     * admin bar, and nothing else. No stylesheet, no three.js, no manifest.
+     * What a V1 page carries: the admin-bar link for an admin, the version switcher
+     * for anyone at all if there is more than one version to switch to. Nothing else -
+     * no stylesheet, no three.js, no manifest of objects to render.
+     *
+     * @param array<string, string>|null $versions null when there is nothing to switch to
      */
-    private function adminLinkOnly(): string
+    private function lightweightBlock(Request $request, bool $isAdmin, array|null $versions): string
     {
-        // JSON_HEX_TAG, because this string is written into an inline <script>: a "<"
-        // that survives into it could end the element early and drop the rest of the
-        // page into the parser as markup.
-        $url = json_encode(route('ogx3d.admin.index'), JSON_HEX_TAG | JSON_HEX_AMP);
-        $active = request()->is('admin/ogx3d*') ? "a.className='active';" : '';
+        $links = ['admin' => $isAdmin ? route('ogx3d.admin.index') : null];
+        if ($versions !== null) {
+            $links['chooseBase'] = url('/ogx3d/choose');
+            $links['versions'] = $versions;
+            $links['current'] = Ogx3dVersions::ORIGINAL;
+        }
 
-        return "\n<!-- OgameX 3D Mod (admin link only - this server is on V1) -->\n"
-            . "<script>document.addEventListener('DOMContentLoaded',function(){"
-            . "var u=document.querySelector('#adminbar #mmoContent ul');if(!u)return;"
-            . "var l=document.createElement('li'),a=document.createElement('a');"
-            . "a.href={$url};a.textContent='3D Mod';{$active}"
-            . "l.appendChild(a);u.appendChild(l);});</script>\n";
+        return "\n<!-- OgameX 3D Mod (V1: switcher only, no 3D assets) -->\n"
+            . '<script type="application/json" id="ogx3d-links">' . $this->safeJson((string) json_encode($links, JSON_UNESCAPED_SLASHES)) . "</script>\n"
+            . '<script type="module" src="' . e(asset('ogx3d/ogx3d.js')) . '"></script>' . "\n";
     }
 
     /**
-     * The handful of urls the browser side needs, so no route name is hardcoded in js.
+     * The handful of urls and facts the browser side needs, so no route name and no
+     * version list is hardcoded in js.
+     *
+     * @param array<string, string> $versions
      */
-    private function links(): string
+    private function links(array $versions, string $current): string
     {
         return (string) json_encode([
             'admin' => route('ogx3d.admin.index'),
+            'chooseBase' => url('/ogx3d/choose'),
+            'versions' => $versions,
+            'current' => $current,
         ], JSON_UNESCAPED_SLASHES);
     }
 
