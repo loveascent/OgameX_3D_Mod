@@ -19,6 +19,9 @@
     .ogx3d-msg { padding: 8px 12px; border-radius: 3px; margin-bottom: 12px; font-size: 12px; }
     .ogx3d-msg.ok { background: #1d3a22; border: 1px solid #3c7a45; color: #b9e6c0; }
     .ogx3d-msg.bad { background: #3a1d1d; border: 1px solid #7a3c3c; color: #e6b9b9; }
+    /* Empty state: keeps its box in the layout (so the first real message does not
+       shift the page) but shows nothing. */
+    .ogx3d-msg.empty { background: none; border: 1px solid transparent; color: transparent; min-height: 17px; }
 
     .ogx3d-versions { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
     .ogx3d-ver { border: 1px solid #26364a; border-radius: 4px; padding: 8px 10px; min-width: 168px; background: rgba(0,0,0,.25); }
@@ -55,6 +58,38 @@
     .ogx3d-now { font-size: 10px; color: #8bc48b; margin-top: 4px; word-break: break-all; }
     .ogx3d-filter { width: 260px; background: #0d1620; color: #cbd6e2; border: 1px solid #2c3d52; border-radius: 3px; padding: 4px 6px; font-size: 12px; }
     .ogx3d-hide { display: none !important; }
+
+    /* Collapsible object groups. A screen with seventy-odd cards is unusable fully
+       expanded; folded, it is one line per group and you open only what you touch. */
+    .ogx3d-group { border: 1px solid #26364a; border-radius: 4px; margin-bottom: 10px; background: rgba(0,0,0,.18); }
+    .ogx3d-group > summary {
+        cursor: pointer; padding: 8px 12px; font-size: 12px; color: #9fc0e8;
+        text-transform: uppercase; letter-spacing: .06em; list-style: none; user-select: none;
+    }
+    .ogx3d-group > summary::-webkit-details-marker { display: none; }
+    .ogx3d-group > summary::before { content: '\25B8'; display: inline-block; margin-right: 8px; transition: transform .12s; }
+    .ogx3d-group[open] > summary::before { transform: rotate(90deg); }
+    .ogx3d-group > summary:hover { color: #cfe2f8; }
+    .ogx3d-group .ogx3d-count { color: #6f8199; font-size: 11px; }
+    .ogx3d-group .ogx3d-dirty-badge { color: #f4b942; font-size: 11px; margin-left: 6px; }
+    .ogx3d-group > .ogx3d-grid { padding: 0 12px 12px; }
+
+    /* CSS grid leaves empty tracks on the last row; align to the start so a half-full
+       row does not spread its cards across the whole width with gaps between them. */
+    .ogx3d-grid { justify-content: start; }
+    .ogx3d-grid > .ogx3d-card { max-width: 420px; }
+
+    /* The one-shot "saved" tick on a card. Sits in the action row, fades itself out -
+       no page movement, unlike scrolling the top banner into view. */
+    .ogx3d-saved { color: #8be68b; font-size: 11px; align-self: center; opacity: 0; transition: opacity .15s; }
+    .ogx3d-saved.show { opacity: 1; }
+    .ogx3d-card.ogx3d-dirty { border-color: #f4b942; }
+
+    /* Sticky action bar: filter + save-all, always reachable however far you scroll. */
+    .ogx3d-bar { position: sticky; top: 0; z-index: 5; background: #0c1520; border: 1px solid #26364a;
+        border-radius: 4px; padding: 8px 10px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .ogx3d-bar .ogx3d-saveall { background: #3c7a45; border-color: #4f9c5b; font-weight: bold; }
+    .ogx3d-bar .ogx3d-saveall[disabled] { opacity: .45; cursor: default; }
 </style>
 
 <div id="alliancecomponent" class="maincontent">
@@ -62,11 +97,11 @@
 
     <h2>OgameX 3D Mod</h2>
 
-    {{-- One banner, reused by every card's ajax save instead of each save needing its
-         own reload to show one. id'd so ogx3d.js can find it without a class that might
-         collide; kept even when empty so there is always somewhere to put a message. --}}
+    {{-- One banner, reused by every card's ajax save. It stays in the layout even when
+         empty - reserved height, no background - so the first message appearing never
+         nudges the page under the cursor. Only its text and colour change after that. --}}
     <div id="ogx3d-banner"
-         class="ogx3d-msg {{ session('error') ? 'bad' : 'ok' }} @unless(session('success') || session('error')) ogx3d-hide @endunless">
+         class="ogx3d-msg {{ session('error') ? 'bad' : (session('success') ? 'ok' : 'empty') }}">
         {{ session('success') ?? session('error') }}
     </div>
 
@@ -211,14 +246,27 @@
             detail panel. You can set both: the model is shown where there is room for it, the picture
             everywhere else.
         </p>
-        <div style="margin-top:8px;">
-            <input class="ogx3d-filter" id="ogx3d-filter" type="text" placeholder="Filter by name...">
-            <form method="POST" action="{{ route('ogx3d.admin.rebuild') }}" style="display:inline-block;margin-left:8px;">
-                @csrf
-                <input type="hidden" name="version" value="{{ $editing }}">
-                <button class="ogx3d-btn" type="submit">Rebuild stylesheet</button>
-            </form>
-        </div>
+        <p class="ogx3d-note" style="margin-top:6px;">
+            Groups are folded to keep this screen short - click a heading to open it.
+            Change as many cards as you like across as many groups as you like, then press
+            <strong>Save all changes</strong>. Saving never moves the page.
+        </p>
+    </div>
+
+    {{-- Sticky action bar: filter, fold controls and the one button that commits every
+         card you touched. Stays on screen however far down the list you are. --}}
+    <div class="ogx3d-bar">
+        <input class="ogx3d-filter" id="ogx3d-filter" type="text" placeholder="Filter by name...">
+        <button type="button" class="ogx3d-btn" id="ogx3d-expand">Expand all</button>
+        <button type="button" class="ogx3d-btn" id="ogx3d-collapse">Collapse all</button>
+        <span style="flex:1"></span>
+        <span class="ogx3d-note" id="ogx3d-dirtycount"></span>
+        <button type="button" class="ogx3d-btn ogx3d-saveall" id="ogx3d-saveall" disabled>Save all changes</button>
+        <form method="POST" action="{{ route('ogx3d.admin.rebuild') }}" style="display:inline-block;">
+            @csrf
+            <input type="hidden" name="version" value="{{ $editing }}">
+            <button class="ogx3d-btn" type="submit">Rebuild stylesheet</button>
+        </form>
     </div>
 
     @php
@@ -227,7 +275,8 @@
 
     @foreach ($cards as $groupName => $items)
         @continue(count($items) === 0)
-        <h3>{{ $groupName }}</h3>
+        <details class="ogx3d-group" @if ($loop->first) open @endif>
+        <summary>{{ $groupName }} <span class="ogx3d-count">({{ count($items) }})</span><span class="ogx3d-dirty-badge ogx3d-hide"></span></summary>
         <div class="ogx3d-grid">
             @foreach ($items as $item)
                 <div class="ogx3d-card {{ $item['assigned'] ? 'set' : '' }}" data-name="{{ strtolower($item['title'] . ' ' . $item['target']) }}">
@@ -322,11 +371,13 @@
                             <button class="ogx3d-btn warn ogx3d-reset-btn @if(!$item['assigned']) ogx3d-hide @endif" type="submit"
                                     formaction="{{ route('ogx3d.admin.reset') }}"
                                     formenctype="application/x-www-form-urlencoded">Back to original</button>
+                            <span class="ogx3d-saved">&#10003; saved</span>
                         </div>
                     </form>
                 </div>
             @endforeach
         </div>
+        </details>
     @endforeach
 
     @endif
@@ -335,43 +386,54 @@
 </div>
 
 <script>
-    // Filter box. Plain substring over a data attribute php already lower-cased - no
-    // library, and nothing that can outlive this page.
-    (function () {
-        var box = document.getElementById('ogx3d-filter');
-        if (!box) { return; }
-        box.addEventListener('input', function () {
-            var q = box.value.trim().toLowerCase();
-            document.querySelectorAll('.ogx3d-card').forEach(function (card) {
-                card.classList.toggle('ogx3d-hide', q !== '' && card.dataset.name.indexOf(q) === -1);
-            });
-        });
-    })();
-
-    /*
-     * Every card's Save and "Back to original" - through fetch(), not a real page
-     * navigation.
-     *
-     * A plain <form method=post> used to mean: click Save on ONE card, and the WHOLE
-     * screen reloads - the filter box empties, the scroll position resets, and
-     * whatever was half-filled-in on every OTHER card is gone. Changing a dozen
-     * objects meant refinding your place a dozen times. Submitting through fetch()
-     * instead keeps everything exactly where it was; only the one card that was
-     * actually saved changes, and the banner at the top says what happened.
-     *
-     * This degrades safely: the controller only answers with json when the request
-     * carries the ajax header this sends, so a browser with JavaScript switched off -
-     * or a curl script posting to the same url - gets the old, plain redirect back.
-     */
     (function () {
         var banner = document.getElementById('ogx3d-banner');
+        var filterBox = document.getElementById('ogx3d-filter');
+        var saveAllBtn = document.getElementById('ogx3d-saveall');
+        var dirtyCount = document.getElementById('ogx3d-dirtycount');
+        var groups = Array.prototype.slice.call(document.querySelectorAll('.ogx3d-group'));
+        var cardForms = Array.prototype.slice.call(document.querySelectorAll('.ogx3d-card form'));
 
+        /* ---- the top banner. Updated in place, NEVER scrolled into view: on a long
+               list, scrolling the top of the page to show a message is the whole
+               "it jumps to the top when I save" complaint. ---- */
         function showBanner(ok, message) {
             if (!banner) { return; }
             banner.textContent = message;
-            banner.classList.remove('ogx3d-hide', 'ok', 'bad');
+            banner.classList.remove('ogx3d-hide', 'empty', 'ok', 'bad');
             banner.classList.add(ok ? 'ok' : 'bad');
-            banner.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+
+        /* ---- dirty tracking. A card the admin has touched is marked, counted in its
+               group's heading and in the bar, and cleared again once it saves. ---- */
+        function markDirty(card) {
+            if (!card || card.classList.contains('ogx3d-dirty')) { return; }
+            card.classList.add('ogx3d-dirty');
+            refreshCounts();
+        }
+        function clearDirty(card) {
+            if (!card) { return; }
+            card.classList.remove('ogx3d-dirty');
+            refreshCounts();
+        }
+        function refreshCounts() {
+            var total = document.querySelectorAll('.ogx3d-card.ogx3d-dirty').length;
+            saveAllBtn.disabled = total === 0;
+            dirtyCount.textContent = total ? total + ' unsaved' : '';
+            groups.forEach(function (g) {
+                var n = g.querySelectorAll('.ogx3d-card.ogx3d-dirty').length;
+                var badge = g.querySelector('.ogx3d-dirty-badge');
+                if (!badge) { return; }
+                badge.textContent = n ? n + ' unsaved' : '';
+                badge.classList.toggle('ogx3d-hide', n === 0);
+            });
+        }
+
+        function flashSaved(card) {
+            var tick = card.querySelector('.ogx3d-saved');
+            if (!tick) { return; }
+            tick.classList.add('show');
+            setTimeout(function () { tick.classList.remove('show'); }, 1600);
         }
 
         function applyToCard(form, data) {
@@ -392,38 +454,108 @@
             var resetBtn = card.querySelector('.ogx3d-reset-btn');
             if (resetBtn) { resetBtn.classList.toggle('ogx3d-hide', !data.assigned); }
 
-            // A saved upload cannot be put back into the <input type=file> it came
-            // from - the browser will not allow it - so it is cleared instead. Left
-            // full it would look like an unsaved change sitting there forever.
+            // A saved upload cannot be put back into its <input type=file>, so clear it.
             form.querySelectorAll('input[type=file]').forEach(function (f) { f.value = ''; });
         }
 
-        document.querySelectorAll('.ogx3d-card form').forEach(function (form) {
+        /* One card's save, as a promise. Resolves true on success, false otherwise -
+           so "Save all" can report how many of a batch went through. No page nav. */
+        function submitForm(form, action) {
+            var body = new FormData(form);
+            return fetch(action, {
+                method: 'POST',
+                body: body,
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin',
+            }).then(function (response) {
+                return response.json().then(function (data) { return { ok: response.ok, data: data }; });
+            }).then(function (result) {
+                if (result.ok) {
+                    applyToCard(form, result.data);
+                    clearDirty(form.closest('.ogx3d-card'));
+                    flashSaved(form.closest('.ogx3d-card'));
+                }
+                return result;
+            });
+        }
+
+        cardForms.forEach(function (form) {
+            var card = form.closest('.ogx3d-card');
+
+            // Any real edit on the card makes it dirty. change covers selects and file
+            // inputs; input covers the number fields as you type.
+            form.addEventListener('change', function () { markDirty(card); });
+            form.addEventListener('input', function () { markDirty(card); });
+
             form.addEventListener('submit', function (event) {
+                event.preventDefault();
                 var submitter = event.submitter;
                 var action = (submitter && submitter.getAttribute('formaction')) || form.action;
+                var isReset = !!(submitter && submitter.getAttribute('formaction'));
 
-                event.preventDefault();
-                var body = new FormData(form);
-
-                fetch(action, {
-                    method: 'POST',
-                    body: body,
-                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                    credentials: 'same-origin',
-                }).then(function (response) {
-                    return response.json().then(function (data) { return { response: response, data: data }; });
-                }).then(function (result) {
-                    showBanner(result.response.ok, result.data.message || (result.response.ok ? 'Saved.' : 'Could not save.'));
-                    if (result.response.ok) { applyToCard(form, result.data); }
+                submitForm(form, action).then(function (result) {
+                    showBanner(result.ok, result.data.message || (result.ok ? (isReset ? 'Back to original.' : 'Saved.') : 'Could not save.'));
                 }).catch(function () {
-                    // No json came back at all - fall back to what a plain form would
-                    // have done, rather than leaving the click looking like nothing
-                    // happened.
+                    // Nothing usable came back. Fall back to a plain submit so the click
+                    // is not swallowed - this one does reload, but only on real failure.
                     form.submit();
                 });
             });
         });
+
+        /* ---- Save all changed cards, one after another so a slow upload does not
+               fire twenty parallel requests. ---- */
+        saveAllBtn.addEventListener('click', function () {
+            var dirty = Array.prototype.slice.call(document.querySelectorAll('.ogx3d-card.ogx3d-dirty form'));
+            if (dirty.length === 0) { return; }
+            saveAllBtn.disabled = true;
+            saveAllBtn.textContent = 'Saving...';
+            var done = 0, failed = 0;
+
+            dirty.reduce(function (chain, form) {
+                return chain.then(function () {
+                    return submitForm(form, form.action).then(function (r) {
+                        r.ok ? done++ : failed++;
+                    }).catch(function () { failed++; });
+                });
+            }, Promise.resolve()).then(function () {
+                saveAllBtn.textContent = 'Save all changes';
+                refreshCounts();
+                showBanner(failed === 0, failed === 0
+                    ? done + ' card(s) saved.'
+                    : done + ' saved, ' + failed + ' failed - the failed ones are still marked.');
+            });
+        });
+
+        /* ---- fold / unfold ---- */
+        var expandBtn = document.getElementById('ogx3d-expand');
+        var collapseBtn = document.getElementById('ogx3d-collapse');
+        if (expandBtn) { expandBtn.addEventListener('click', function () { groups.forEach(function (g) { g.open = true; }); }); }
+        if (collapseBtn) { collapseBtn.addEventListener('click', function () { groups.forEach(function (g) { g.open = false; }); }); }
+
+        /* ---- filter. While a query is active every group is forced open and groups
+               with no match are hidden; clearing it restores the folded layout. ---- */
+        var defaultOpen = groups.map(function (g) { return g.open; });
+        if (filterBox) {
+            filterBox.addEventListener('input', function () {
+                var q = filterBox.value.trim().toLowerCase();
+                groups.forEach(function (g, i) {
+                    var any = false;
+                    g.querySelectorAll('.ogx3d-card').forEach(function (card) {
+                        var hit = q === '' || card.dataset.name.indexOf(q) !== -1;
+                        card.classList.toggle('ogx3d-hide', !hit);
+                        if (hit) { any = true; }
+                    });
+                    if (q === '') {
+                        g.classList.remove('ogx3d-hide');
+                        g.open = defaultOpen[i];
+                    } else {
+                        g.classList.toggle('ogx3d-hide', !any);
+                        g.open = any;
+                    }
+                });
+            });
+        }
     })();
 </script>
 
