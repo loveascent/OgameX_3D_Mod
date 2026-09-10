@@ -271,6 +271,9 @@
                             @endforeach
                         </select>
 
+                        <label>...or upload one now (.glb / .gltf, up to 64 MB)</label>
+                        <input type="file" name="model_file" accept=".glb,.gltf">
+
                         <div class="ogx3d-row">
                             <div>
                                 <label>Lighting</label>
