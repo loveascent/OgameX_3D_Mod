@@ -286,48 +286,55 @@ class Ogx3dAssets
             return [];
         }
 
+        // The WHOLE body is wrapped, not just the getObjects() call. Everything the loop
+        // touches after it - the GameObjectType enum cases, $object->type, ->class_name,
+        // ->assets - belongs to the game, not to this mod, and a game update is free to
+        // rename or restructure any of it. The <img> swap map is a convenience on top of
+        // the css overrides; if the game moved out from under it, the right outcome is an
+        // empty map and working css overrides, never a 500 on every page.
         try {
             $objects = \OGame\Services\ObjectService::getObjects();
+
+            $map = [];
+            foreach ($objects as $object) {
+                $override = $overrides[$object->class_name] ?? null;
+                $image = (string) ($override?->image_path ?? '');
+                if ($image === '') {
+                    continue;
+                }
+
+                $folder = match ($object->type) {
+                    \OGame\GameObjects\Models\Enums\GameObjectType::Building,
+                    \OGame\GameObjects\Models\Enums\GameObjectType::Station => 'img/objects/buildings/',
+                    \OGame\GameObjects\Models\Enums\GameObjectType::Research => 'img/objects/research/',
+                    default => 'img/objects/units/',
+                };
+
+                $replacement = asset($image);
+                // Per object, not around the whole loop. GameObjectAssets declares its two
+                // fields as typed strings with no default, so an object somebody added
+                // without filling them in throws on read - and catching that outside the
+                // loop would let ONE such object silently empty the map for every object,
+                // which looks like "the mod stopped working" rather than "that one object
+                // has no artwork listed".
+                try {
+                    foreach ([$object->assets->imgSmall, $object->assets->imgMicro] as $file) {
+                        if ($file !== '') {
+                            $map[$folder . $file] = $replacement;
+                        }
+                    }
+                } catch (Throwable) {
+                    continue;
+                }
+            }
+
+            return $map;
         } catch (Throwable) {
-            // A game that cannot list its own objects has larger problems than this
-            // map; the css overrides still work without it.
+            // A game that cannot list its own objects, or whose object shape this mod no
+            // longer recognises, has larger problems than this map. The css overrides
+            // still work without it.
             return [];
         }
-
-        $map = [];
-        foreach ($objects as $object) {
-            $override = $overrides[$object->class_name] ?? null;
-            $image = (string) ($override?->image_path ?? '');
-            if ($image === '') {
-                continue;
-            }
-
-            $folder = match ($object->type) {
-                \OGame\GameObjects\Models\Enums\GameObjectType::Building,
-                \OGame\GameObjects\Models\Enums\GameObjectType::Station => 'img/objects/buildings/',
-                \OGame\GameObjects\Models\Enums\GameObjectType::Research => 'img/objects/research/',
-                default => 'img/objects/units/',
-            };
-
-            $replacement = asset($image);
-            // Per object, not around the whole loop. GameObjectAssets declares its two
-            // fields as typed strings with no default, so an object somebody added
-            // without filling them in throws on read - and catching that outside the
-            // loop would let ONE such object silently empty the map for every object,
-            // which looks like "the mod stopped working" rather than "that one object
-            // has no artwork listed".
-            try {
-                foreach ([$object->assets->imgSmall, $object->assets->imgMicro] as $file) {
-                    if ($file !== '') {
-                        $map[$folder . $file] = $replacement;
-                    }
-                }
-            } catch (Throwable) {
-                continue;
-            }
-        }
-
-        return $map;
     }
 
     /**
