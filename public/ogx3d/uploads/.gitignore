@@ -1,0 +1,5 @@
+# Pictures uploaded through the admin screen land here, one folder per version.
+# They belong to the server that made them, not to the mod, so git ignores all of it
+# and only keeps the folder itself.
+*
+!.gitignore

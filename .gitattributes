@@ -1,0 +1,11 @@
+# One line ending everywhere in the repository, whatever anyone checks out on.
+* text=auto eol=lf
+
+# Anything anyone drops into the mod's folders is theirs and is left alone.
+*.glb binary
+*.gltf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary

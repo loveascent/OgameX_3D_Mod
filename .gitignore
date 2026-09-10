@@ -1,0 +1,16 @@
+# Whatever an admin uploads through the game belongs to that server, not to the mod.
+/public/ogx3d/uploads/*
+!/public/ogx3d/uploads/.gitignore
+
+# three.js, if somebody downloads their own copy. Not ours to redistribute.
+/public/ogx3d/vendor/three/*
+!/public/ogx3d/vendor/three/READ_ME.txt
+
+# The files the mod is there to help you install.
+/public/Put_GLB_and_Icons_here/3D_GLB_Files_Here/*
+!/public/Put_GLB_and_Icons_here/3D_GLB_Files_Here/.gitkeep
+/public/Put_GLB_and_Icons_here/Icons_Here/*
+!/public/Put_GLB_and_Icons_here/Icons_Here/.gitkeep
+
+# Left behind by the installer.
+*.ogx3d-backup
