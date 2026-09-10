@@ -79,8 +79,13 @@ function addVersionSwitcher() {
     const versions = LINKS.versions;
     if (!versions || !LINKS.chooseBase) { return; }
 
-    const target = document.querySelector('#siteFooter .fright');
-    if (!target || target.querySelector('.ogx3d-switcher')) { return; }
+    // Right where the game's own top bar already has "Player: <name>" and
+    // "Highscore (-)" as separate <li> entries in the same <ul> - so the switcher sits
+    // between them, in the one place every player looks first, and inherits that bar's
+    // own list-item styling for free.
+    const playerItem = document.querySelector('#bar #playerName');
+    const list = playerItem ? playerItem.parentElement : null;
+    if (!list || list.querySelector('.ogx3d-switcher')) { return; }
 
     const back = encodeURIComponent(location.href);
     const keys = Object.keys(versions);
@@ -89,21 +94,19 @@ function addVersionSwitcher() {
     // cached page still carries an old, longer list.
     if (keys.length < 2) { return; }
 
-    const frag = document.createDocumentFragment();
-    keys.forEach((key) => {
+    const li = document.createElement('li');
+    li.className = 'ogx3d-switcher';
+    keys.forEach((key, i) => {
+        if (i > 0) { li.appendChild(document.createTextNode(' ')); }
         const a = document.createElement('a');
         a.href = LINKS.chooseBase + '/' + encodeURIComponent(key) + '?back=' + back;
         a.textContent = key.toUpperCase();
         a.title = versions[key];
-        if (key === LINKS.current) { a.className = 'bold'; }
-        frag.appendChild(a);
-        frag.appendChild(document.createTextNode('|'));
+        if (key === LINKS.current) { a.style.fontWeight = 'bold'; a.style.textDecoration = 'underline'; }
+        li.appendChild(a);
     });
 
-    const wrap = document.createElement('span');
-    wrap.className = 'ogx3d-switcher';
-    wrap.appendChild(frag);
-    target.appendChild(wrap);
+    playerItem.insertAdjacentElement('afterend', li);
 }
 
 /* --------------------------------------------------------------------------
