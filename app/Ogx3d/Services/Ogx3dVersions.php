@@ -89,9 +89,17 @@ class Ogx3dVersions
         // Only a set-up state is worth remembering. Caching "not migrated yet" would
         // mean a fresh install stays broken after `php artisan migrate` until somebody
         // is told to clear a cache they do not know exists.
+        //
+        // A SHORT TTL, not forever. Every method that changes a version calls forget(),
+        // so in normal use this is always fresh - but a row changed from outside the
+        // service (a tinker session, a second admin on another worker, a restored
+        // backup) would otherwise leave a "forever" entry disagreeing with the database
+        // until someone clears a cache they don't know exists. The symptom is a deleted
+        // version that keeps coming back, or a "+ New version" that skips a number.
+        // Sixty seconds bounds that while still sparing the per-request query under load.
         if ($state['ready']) {
             try {
-                Cache::forever(self::CACHE_KEY, $state);
+                Cache::put(self::CACHE_KEY, $state, 60);
             } catch (Throwable) {
                 // Working without a cache is slower, not wrong.
             }
