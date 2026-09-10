@@ -62,12 +62,13 @@
 
     <h2>OgameX 3D Mod</h2>
 
-    @if (session('success'))
-        <div class="ogx3d-msg ok">{{ session('success') }}</div>
-    @endif
-    @if (session('error'))
-        <div class="ogx3d-msg bad">{{ session('error') }}</div>
-    @endif
+    {{-- One banner, reused by every card's ajax save instead of each save needing its
+         own reload to show one. id'd so ogx3d.js can find it without a class that might
+         collide; kept even when empty so there is always somewhere to put a message. --}}
+    <div id="ogx3d-banner"
+         class="ogx3d-msg {{ session('error') ? 'bad' : 'ok' }} @unless(session('success') || session('error')) ogx3d-hide @endunless">
+        {{ session('success') ?? session('error') }}
+    </div>
 
     @unless ($ready)
         <div class="ogx3d-msg bad">
@@ -307,23 +308,20 @@
                             </div>
                         </div>
 
-                        @if ($item['image'])
-                            <div class="ogx3d-now">picture: {{ basename($item['image']) }}</div>
-                        @endif
-                        @if ($item['model'])
-                            <div class="ogx3d-now">model: {{ basename($item['model']) }}</div>
-                        @endif
+                        <div class="ogx3d-now ogx3d-now-image" @if(!$item['image']) style="display:none" @endif>picture: <span>{{ $item['image'] ? basename($item['image']) : '' }}</span></div>
+                        <div class="ogx3d-now ogx3d-now-model" @if(!$item['model']) style="display:none" @endif>model: <span>{{ $item['model'] ? basename($item['model']) : '' }}</span></div>
 
                         <div class="ogx3d-actions">
                             <button class="ogx3d-btn go" type="submit">Save</button>
-                            @if ($item['assigned'])
-                                {{-- formaction, not a second <form>: a form inside a form is
-                                     discarded by the html parser, and the inner button then
-                                     silently submits the OUTER form instead. --}}
-                                <button class="ogx3d-btn warn" type="submit"
-                                        formaction="{{ route('ogx3d.admin.reset') }}"
-                                        formenctype="application/x-www-form-urlencoded">Back to original</button>
-                            @endif
+                            {{-- formaction, not a second <form>: a form inside a form is
+                                 discarded by the html parser, and the inner button then
+                                 silently submits the OUTER form instead. Hidden rather than
+                                 left out when there is nothing yet to reset, so ogx3d.js can
+                                 just toggle it after a save instead of building one from
+                                 scratch. --}}
+                            <button class="ogx3d-btn warn ogx3d-reset-btn @if(!$item['assigned']) ogx3d-hide @endif" type="submit"
+                                    formaction="{{ route('ogx3d.admin.reset') }}"
+                                    formenctype="application/x-www-form-urlencoded">Back to original</button>
                         </div>
                     </form>
                 </div>
@@ -346,6 +344,84 @@
             var q = box.value.trim().toLowerCase();
             document.querySelectorAll('.ogx3d-card').forEach(function (card) {
                 card.classList.toggle('ogx3d-hide', q !== '' && card.dataset.name.indexOf(q) === -1);
+            });
+        });
+    })();
+
+    /*
+     * Every card's Save and "Back to original" - through fetch(), not a real page
+     * navigation.
+     *
+     * A plain <form method=post> used to mean: click Save on ONE card, and the WHOLE
+     * screen reloads - the filter box empties, the scroll position resets, and
+     * whatever was half-filled-in on every OTHER card is gone. Changing a dozen
+     * objects meant refinding your place a dozen times. Submitting through fetch()
+     * instead keeps everything exactly where it was; only the one card that was
+     * actually saved changes, and the banner at the top says what happened.
+     *
+     * This degrades safely: the controller only answers with json when the request
+     * carries the ajax header this sends, so a browser with JavaScript switched off -
+     * or a curl script posting to the same url - gets the old, plain redirect back.
+     */
+    (function () {
+        var banner = document.getElementById('ogx3d-banner');
+
+        function showBanner(ok, message) {
+            if (!banner) { return; }
+            banner.textContent = message;
+            banner.classList.remove('ogx3d-hide', 'ok', 'bad');
+            banner.classList.add(ok ? 'ok' : 'bad');
+            banner.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+
+        function applyToCard(form, data) {
+            var card = form.closest('.ogx3d-card');
+            if (!card) { return; }
+            card.classList.toggle('set', !!data.assigned);
+
+            var pic = card.querySelector('.ogx3d-now-image');
+            if (pic) {
+                pic.style.display = data.image ? '' : 'none';
+                pic.querySelector('span').textContent = data.image ? data.image.split('/').pop() : '';
+            }
+            var mod = card.querySelector('.ogx3d-now-model');
+            if (mod) {
+                mod.style.display = data.model ? '' : 'none';
+                mod.querySelector('span').textContent = data.model ? data.model.split('/').pop() : '';
+            }
+            var resetBtn = card.querySelector('.ogx3d-reset-btn');
+            if (resetBtn) { resetBtn.classList.toggle('ogx3d-hide', !data.assigned); }
+
+            // A saved upload cannot be put back into the <input type=file> it came
+            // from - the browser will not allow it - so it is cleared instead. Left
+            // full it would look like an unsaved change sitting there forever.
+            form.querySelectorAll('input[type=file]').forEach(function (f) { f.value = ''; });
+        }
+
+        document.querySelectorAll('.ogx3d-card form').forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                var submitter = event.submitter;
+                var action = (submitter && submitter.getAttribute('formaction')) || form.action;
+
+                event.preventDefault();
+                var body = new FormData(form);
+
+                fetch(action, {
+                    method: 'POST',
+                    body: body,
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'same-origin',
+                }).then(function (response) {
+                    return response.json().then(function (data) { return { response: response, data: data }; });
+                }).then(function (result) {
+                    showBanner(result.response.ok, result.data.message || (result.response.ok ? 'Saved.' : 'Could not save.'));
+                    if (result.response.ok) { applyToCard(form, result.data); }
+                }).catch(function () {
+                    // No json came back at all - fall back to what a plain form would
+                    // have done, rather than leaving the click looking like nothing
+                    // happened.
+                    form.submit();
+                });
             });
         });
     })();

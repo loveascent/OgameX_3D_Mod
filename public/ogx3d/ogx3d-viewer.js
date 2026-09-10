@@ -336,8 +336,10 @@ export function create(box, spec, presets) {
             ? box.clientWidth / box.clientHeight
             : (camera.aspect || 1);
 
-        // 1.12 is the margin that keeps the model off the edge of its frame.
-        const distance = (Math.max(halfHigh / tanHalf, halfWide / (tanHalf * aspect)) * 1.12 + halfDeep) * zoom;
+        // 1.03 is the margin that keeps the model off the edge of its frame - tight, so
+        // it actually fills the window instead of floating in the middle of a lot of
+        // empty space around it.
+        const distance = (Math.max(halfHigh / tanHalf, halfWide / (tanHalf * aspect)) * 1.03 + halfDeep) * zoom;
 
         camera.position.copy(centre).addScaledVector(dir, distance);
         camera.near = Math.max(radius / 500, 0.005);
@@ -345,7 +347,18 @@ export function create(box, spec, presets) {
         camera.updateProjectionMatrix();
 
         controls.target.copy(centre);
-        controls.minDistance = distance * 0.35;
+        /*
+         * NEVER CLOSER THAN JUST OUTSIDE THE MODEL ITSELF.
+         *
+         * distance * 0.35 alone is wrong for anything long and thin - a destroyer, say,
+         * seen mostly end-on. There halfDeep (close to the model's own half-length) can
+         * be BIGGER than the frame-fitting term, so 0.35 of the total lets a zoom carry
+         * the camera to well inside the ship's own bounding sphere. From in there you
+         * are looking at the backs of faces the renderer culls away - the model reads
+         * as "gone", not as "close". radius * 1.05 is a floor that keeps the camera
+         * just outside the model at every zoom level, whatever its proportions.
+         */
+        controls.minDistance = Math.max(distance * 0.35, radius * 1.05);
         controls.maxDistance = distance * 2.5;
         controls.update();
 
