@@ -233,8 +233,9 @@ class Ogx3dAdminController extends OGameController
             'version' => ['required', 'string', 'max:16'],
             'target' => ['required', 'string', 'max:64'],
             'image' => ['nullable', 'string', 'max:255'],
-            'image_file' => ['nullable', 'image', 'max:8192'],
+            'image_file' => ['nullable', 'file', 'mimes:png,jpg,jpeg,gif,webp', 'max:8192'],
             'model' => ['nullable', 'string', 'max:255'],
+            'model_file' => ['nullable', 'file', 'mimes:glb,gltf', 'max:65536'],
             'preset' => ['nullable', 'string', 'max:32'],
             'motion' => ['nullable', 'string', 'in:hover,spin,still'],
             'spin' => ['nullable', 'numeric', 'min:0', 'max:20'],
@@ -253,34 +254,24 @@ class Ogx3dAdminController extends OGameController
 
         $attributes = [];
 
-        // An uploaded file wins over a pick from the drop folder: if someone filled in
-        // both, the upload is the thing they did most recently and most deliberately.
+        /*
+         * A FILE PICKED HERE LANDS IN THE SAME SHARED DROP FOLDER AS A FILE DRAGGED IN
+         * BY HAND, NOT IN A HIDDEN PER-VERSION FOLDER.
+         *
+         * That used to be different: picking a file right on an object's own card
+         * quietly filed it away under public/ogx3d/uploads/<version>/, invisible to the
+         * drop-down and to anyone looking in Put_GLB_and_Icons_here/ afterwards - one
+         * file, two different homes depending on which button you happened to click to
+         * add it. Now both paths call the same saveIntoDropFolder(), so "I picked a
+         * file" always means "it is now in the folder, and in the list" - no exceptions
+         * to remember.
+         */
         if ($request->hasFile('image_file')) {
-            $file = $request->file('image_file');
-            $dir = public_path($this->assets->uploadDir($version));
-            File::ensureDirectoryExists($dir);
-            // The extension comes out of the uploader's own filename, so it is
-            // caller-controlled text, not a fact. It ends up in a path on disk AND
-            // inside url('...') in the generated stylesheet, so anything not on this
-            // list becomes .png rather than becoming a problem.
-            $extension = strtolower((string) $file->getClientOriginalExtension());
-            if (!in_array($extension, ['png', 'jpg', 'jpeg', 'gif', 'webp'], true)) {
-                $extension = 'png';
-            }
-            // Named after the object, not after the upload: re-uploading then replaces
-            // the previous file instead of leaving orphans, and the name stays
-            // predictable for anyone looking in public/ by hand.
-            $name = $target . '.' . $extension;
-            // Any earlier upload for this object under a different extension would
-            // otherwise stay on disk and be the file nothing points at any more.
-            foreach (['png', 'jpg', 'jpeg', 'gif', 'webp'] as $old) {
-                $stale = $dir . DIRECTORY_SEPARATOR . $target . '.' . $old;
-                if ($old !== $extension && is_file($stale)) {
-                    File::delete($stale);
-                }
-            }
-            $file->move($dir, $name);
-            $attributes['image_path'] = $this->assets->uploadDir($version) . '/' . $name;
+            $attributes['image_path'] = $this->saveIntoDropFolder(
+                $request->file('image_file'),
+                (string) config('ogx3d.icon_dir'),
+                ['png', 'jpg', 'jpeg', 'gif', 'webp']
+            );
         } elseif (($data['image'] ?? '') !== '') {
             if (!in_array($data['image'], $this->assets->availableIcons(), true)) {
                 return $this->back($version)->with('error', 'That icon is not in ' . config('ogx3d.icon_dir') . '.');
@@ -290,7 +281,13 @@ class Ogx3dAdminController extends OGameController
             $attributes['image_path'] = null;
         }
 
-        if (($data['model'] ?? '') !== '') {
+        if ($request->hasFile('model_file')) {
+            $attributes['model_path'] = $this->saveIntoDropFolder(
+                $request->file('model_file'),
+                (string) config('ogx3d.model_dir'),
+                ['glb', 'gltf']
+            );
+        } elseif (($data['model'] ?? '') !== '') {
             if (!in_array($data['model'], $this->assets->availableModels(), true)) {
                 return $this->back($version)->with('error', 'That model is not in ' . config('ogx3d.model_dir') . '.');
             }
@@ -367,24 +364,18 @@ class Ogx3dAdminController extends OGameController
         if (!$isModel && !$isIcon) {
             return $this->back($version)->with('error', 'Only .glb, .gltf, .png, .jpg, .gif and .webp are accepted.');
         }
-        if ($file->getSize() > 64 * 1024 * 1024) {
-            return $this->back($version)->with('error', 'That file is larger than 64 MB.');
+
+        try {
+            $path = $this->saveIntoDropFolder(
+                $file,
+                (string) config($isModel ? 'ogx3d.model_dir' : 'ogx3d.icon_dir'),
+                $isModel ? ['glb', 'gltf'] : ['png', 'jpg', 'jpeg', 'gif', 'webp']
+            );
+        } catch (\RuntimeException $e) {
+            return $this->back($version)->with('error', $e->getMessage());
         }
 
-        $dir = public_path((string) config($isModel ? 'ogx3d.model_dir' : 'ogx3d.icon_dir'));
-        File::ensureDirectoryExists($dir);
-
-        // The name is caller-controlled, so keep only the parts that can name a file
-        // and nothing that can name a directory.
-        $base = preg_replace('/[^A-Za-z0-9._-]/', '_', (string) $file->getClientOriginalName()) ?? 'upload';
-        $base = ltrim(str_replace('..', '_', $base), '.');
-        if ($base === '') {
-            $base = 'upload.' . $extension;
-        }
-
-        $file->move($dir, $base);
-
-        return $this->back($version)->with('success', $base . ' added. It is now in the list below.');
+        return $this->back($version)->with('success', basename($path) . ' added. It is now in the list below.');
     }
 
     public function rebuild(Request $request): RedirectResponse
@@ -416,6 +407,54 @@ class Ogx3dAdminController extends OGameController
         }
 
         return null;
+    }
+
+    /**
+     * The one place a file picked anywhere in this screen ends up: the shared drop
+     * folder (public/Put_GLB_and_Icons_here/...), never a private per-version corner.
+     *
+     * Whatever picked it - the top "Add to folder" box, or the file picker sitting
+     * right on one object's own card - lands here, under the SAME rules: a safe name
+     * built from what the browser sent, collisions numbered rather than overwritten so
+     * two different files with the same name both survive, and the extension checked
+     * against an allow-list rather than trusted, because it ends up in a path on disk
+     * and inside a generated css url('...').
+     *
+     * @param array<int, string> $allowedExtensions
+     *
+     * @throws \RuntimeException if the file's extension is not on the allow-list
+     */
+    private function saveIntoDropFolder(\Illuminate\Http\UploadedFile $file, string $configuredDir, array $allowedExtensions): string
+    {
+        $extension = strtolower((string) $file->getClientOriginalExtension());
+        if (!in_array($extension, $allowedExtensions, true)) {
+            throw new \RuntimeException('Only .' . implode(', .', $allowedExtensions) . ' is accepted here.');
+        }
+
+        $dir = public_path($configuredDir);
+        File::ensureDirectoryExists($dir);
+
+        // Keep only what can name a file, nothing that can name a directory - the
+        // browser sends this name verbatim, so it is caller-controlled text, not fact.
+        $stem = pathinfo((string) $file->getClientOriginalName(), PATHINFO_FILENAME);
+        $stem = preg_replace('/[^A-Za-z0-9._ -]/', '_', $stem) ?? 'upload';
+        $stem = trim(ltrim(str_replace('..', '_', $stem), '.'));
+        if ($stem === '') {
+            $stem = 'upload';
+        }
+
+        // Two different files sharing a name both keep their content: the second one
+        // becomes "name (2).ext" rather than silently replacing the first admin's work.
+        $name = $stem . '.' . $extension;
+        $n = 2;
+        while (is_file($dir . DIRECTORY_SEPARATOR . $name)) {
+            $name = $stem . ' (' . $n . ').' . $extension;
+            $n++;
+        }
+
+        $file->move($dir, $name);
+
+        return $configuredDir . '/' . $name;
     }
 
     private function isKnownTarget(string $target): bool

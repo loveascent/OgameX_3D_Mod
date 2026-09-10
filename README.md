@@ -118,6 +118,19 @@ Run this first. It checks everything and tells you the command that fixes what i
 php artisan ogx3d:doctor
 ```
 
+**Uploading a file gives a blank "413 Request Entity Too Large" page.**
+That page comes from your web server, not from this mod — a file was too big to even
+reach Laravel. Two limits usually need raising for a `.glb` of a few MB:
+
+- **nginx**: `client_max_body_size 100m;` inside the `server { }` (or `http { }`) block
+  of your nginx config, then reload nginx.
+- **Apache**: `LimitRequestBody 104857600` in your vhost or `.htaccess`.
+- **PHP**: `upload_max_filesize` and `post_max_size` in `php.ini`, both at least as big
+  as the file (`php -i | grep max` shows the current values).
+
+The mod itself accepts up to 64 MB per model and 8 MB per picture — raise the limits
+above to at least that if uploads keep failing.
+
 **My model does not show up.**
 Press <kbd>F12</kbd> in the browser and look at the *Console* tab — a model that fails to
 load says exactly why there. The usual causes:
