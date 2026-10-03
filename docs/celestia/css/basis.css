@@ -69,3 +69,7 @@ body { overflow-x: hidden; }
 
 /* Todesstern (fertige Szene aus allianz-vorschau, iframe wie im Login) */
 .stern { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000; mix-blend-mode: screen; visibility: hidden; opacity: 0; }
+
+/* Blend-Modus braucht denselben Stapelkontext wie Himmel und Planet: Wirt ohne eigenen Kontext */
+#stern-wirt { position: static; z-index: auto; }
+.stern { z-index: 3; }
