@@ -5,14 +5,14 @@ export const LAYOUT = { station: { x: 0.78, y: 0.24, breite: 0.30 }, planet: { x
 
 export function erstelleTodesstern(wirt) {
 	const f = document.createElement('iframe'); f.className = 'stern'; f.title = 'Todesstern'; f.setAttribute('aria-hidden', 'true'); f.tabIndex = -1;
-	let geladen = false, bereit = false, hat = false;
+	let geladen = false, bereit = false, hostDa = false, layoutDa = false;
 	const sende = (m) => f.contentWindow?.postMessage(m, location.origin);
 	addEventListener('message', (e) => {
 		if (e.origin !== location.origin || e.source !== f.contentWindow) return;
-		if (e.data?.todesstern === 'geladen') sende({ layout: LAYOUT });
+		if (e.data?.todesstern === 'geladen') hostDa = true;
 		if (e.data?.todesstern === 'bereit') bereit = true;
 	});
-	addEventListener('resize', () => sende({ layout: LAYOUT }));
+	addEventListener('resize', () => { if (layoutDa) sende({ layout: LAYOUT }); });
 	wirt.append(f);
 	let gefeuert = false;
 	return {
@@ -20,6 +20,7 @@ export function erstelleTodesstern(wirt) {
 		lade() { if (geladen) return; geladen = true; f.src = HOST + '?' + new URLSearchParams({ stufe: innerWidth < 700 ? 'niedrig' : 'mittel', dpr: 1.5, fps: 60 }); },
 		/** a: Deckkraft 0..1; feuer: true sobald der Schuss fallen soll */
 		lege(a, feuer) {
+			if (a > 0.003 && hostDa && !layoutDa) { layoutDa = true; sende({ layout: LAYOUT }); }
 			f.style.opacity = a.toFixed(3); f.style.visibility = a < 0.003 ? 'hidden' : 'visible';
 			if (feuer && bereit && !gefeuert) { gefeuert = true; sende({ feuer: true }); }
 			if (a < 0.003) gefeuert = false;
