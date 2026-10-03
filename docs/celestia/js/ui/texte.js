@@ -7,12 +7,10 @@ export const UNTERTITEL = [
 ];
 
 export const ALLIANZ_URL = 'https://s284-de.ogame.gameforge.com/game/allianceInfo.php?allianceId=500192';
-export const QUELLE_URL = 'https://github.com/loveascent/OgameX_3D_Mod';
 
 export const ABSCHLUSS = {
 	titel: 'World of Celestia',
 	sub: 'OGame · Universum 284 (DE)',
 	slogans: ['Aktivität vor Highscore.', 'Wir schützen uns – immer.', 'Offen, respektvoll, gemeinsam.', 'Dein Platz ist frei.'],
 	knopf: 'Allianz ansehen & bewerben',
-	fuss: 'Quellcode: github.com/loveascent/OgameX_3D_Mod',
 };
