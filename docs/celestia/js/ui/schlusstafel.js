@@ -2,7 +2,7 @@
 import { bereich, glatt } from '../kern/zeitleiste.js';
 import { ABSCHLUSS, ALLIANZ_URL } from './inhalt.js';
 
-const PLANETEN = ['Heißer Jupiter', 'Jupiter'];
+const PLANETEN = ['Jupiter', 'Neptun', 'Saturn'];
 
 export function erstelleAbschluss(wirt, { planetWechsel } = {}) {
 	const h = document.createElement('section'); h.className = 'abschluss'; h.setAttribute('aria-label', 'Allianz');
