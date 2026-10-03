@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Todesstern (Login-Ebene)</title>
+<!-- Gastgeber-Seite fuer den Login: nur der Todesstern, ohne Bedienung, Grund schwarz (der Login legt ihn
+     per mix-blend-mode: screen ueber Weltraum und Planet). Aufbau wie ansicht.html in OGame-3D-Schiffe\todesstern\web. -->
+<style>
+	html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+	canvas { display: block; }
+</style>
+<script type="importmap">
+{ "imports": {
+	"three": "/OgameX_3D_Mod/allianz-vorschau/mods/_vendor/three-0.186.1/build/three.webgpu.js",
+	"three/webgpu": "/OgameX_3D_Mod/allianz-vorschau/mods/_vendor/three-0.186.1/build/three.webgpu.js",
+	"three/tsl": "/OgameX_3D_Mod/allianz-vorschau/mods/_vendor/three-0.186.1/build/three.tsl.js",
+	"three/addons/": "/OgameX_3D_Mod/allianz-vorschau/mods/_vendor/three-0.186.1/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<script type="module" src="./host.js"></script>
+</body>
+</html>
