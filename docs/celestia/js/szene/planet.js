@@ -17,7 +17,7 @@ function fovFuer(rPx, seitePx) {
 	return (2 * Math.atan((seitePx / 2) * Math.tan(winkel) / rPx) * 180) / Math.PI;
 }
 
-export function erstellePlanet(wirt, { vorlage = 'Jupiter', seed = 7 } = {}) {
+export function erstellePlanet(wirt, { vorlage = 'Heißer Jupiter', seed = 7 } = {}) {
 	const klein = Math.min(innerWidth, innerHeight) < 600;
 	const stufe = klein ? STUFEN.handy : STUFEN.laptop;
 	const f = document.createElement('iframe');
@@ -29,14 +29,15 @@ export function erstellePlanet(wirt, { vorlage = 'Jupiter', seed = 7 } = {}) {
 	const seite = Math.round(R * SEITE);
 	f.style.width = f.style.height = seite + 'px';
 	const q = new URLSearchParams({ einbettung: 1, vorlage, seed, fov: fovFuer(R, seite).toFixed(3), abstand: ABSTAND, ...stufe });
-	f.src = PLANET_URL + '?' + q;
+	const lade = (v) => { q.set('vorlage', v); f.src = PLANET_URL + '?' + q; };
+	lade(vorlage);
 	addEventListener('message', (e) => {
 		if (e.origin === location.origin && e.source === f.contentWindow && e.data?.gasplanet === 'bereit') bereit();
 	});
 	wirt.append(f);
 
 	return {
-		element: f, bereit: fertig, radius: R, seite,
+		element: f, bereit: fertig, radius: R, seite, wechsle: lade,
 		/** cx/cy: Mitte auf dem Bildschirm (px), s: Massstab (1 = Vollansicht), a: Deckkraft, clip: optional CSS clip-path */
 		lege({ cx, cy, s, a, clip = 'none' }) {
 			f.style.transform = `translate3d(${(cx - seite / 2).toFixed(1)}px,${(cy - seite / 2).toFixed(1)}px,0) scale(${Math.max(0.001, s).toFixed(4)})`;

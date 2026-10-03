@@ -30,7 +30,7 @@ const planet = erstellePlanet($('#planet-wirt'));
 let jaeger = null;
 erstelleJaeger3D($('#jaeger-wirt')).then((j) => { jaeger = j; }).catch((e) => console.warn('Celestia: Jaeger nicht verfuegbar –', e.message));
 const stern = erstelleTodesstern($('#stern-wirt'));
-const abschluss = erstelleAbschluss($('#abschluss-wirt'));
+const abschluss = erstelleAbschluss($('#abschluss-wirt'), { planetWechsel: (v) => planet.wechsle(v) });
 const untertitel = erstelleUntertitel($('#text-wirt'));
 const hinweis = $('#scrollhinweis'), kopf = $('#kopf');
 
