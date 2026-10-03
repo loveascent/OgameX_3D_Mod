@@ -8,8 +8,8 @@ const ABSTAND = 4.3;    // Kameraabstand in Radien
 const PLANET_URL = new URL('../../../allianz-vorschau/mods/_gemeinsam/planet/index.html', import.meta.url);
 
 const STUFEN = {
-	handy: { quality: 'phone', velRes: 96, dyeRes: 384, pixelDensity: 1, einschwingen: 800, timeScale: 1, autoQuality: 1 },
-	laptop: { quality: 'standard', velRes: 128, dyeRes: 768, pixelDensity: 1.25, einschwingen: 1200, timeScale: 1, autoQuality: 1 },
+	handy: { quality: 'phone', velRes: 96, dyeRes: 384, pixelDensity: 1, einschwingen: 800, timeScale: 3, autoQuality: 1 },
+	laptop: { quality: 'standard', velRes: 128, dyeRes: 768, pixelDensity: 1.25, einschwingen: 1200, timeScale: 3, autoQuality: 1 },
 };
 
 function fovFuer(rPx, seitePx) {

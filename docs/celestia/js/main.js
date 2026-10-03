@@ -28,9 +28,12 @@ for (let i = 0; i < 60 && (!innerWidth || !innerHeight); i++) await new Promise(
 
 const planet = erstellePlanet($('#planet-wirt'));
 let jaeger = null;
-erstelleJaeger3D($('#jaeger-wirt')).then((j) => { jaeger = j; }).catch((e) => console.warn('Celestia: Jaeger nicht verfuegbar –', e.message));
+const jaegerFertig = erstelleJaeger3D($('#jaeger-wirt')).then((j) => { jaeger = j; }).catch((e) => console.warn('Celestia: Jaeger nicht verfuegbar –', e.message));
 const stern = erstelleTodesstern($('#stern-wirt'));
-const abschluss = erstelleAbschluss($('#abschluss-wirt'), { planetWechsel: (v) => planet.wechsle(v) });
+const abschluss = erstelleAbschluss($('#abschluss-wirt'), { planetWechsel: (v) => planet.wechsle(v), planetAus: (aus) => { planet.element.style.display = aus ? 'none' : ''; } });
+
+// Alles gleich beim Betreten vorladen, nacheinander (Grafikkarte nicht ueberlasten): Planet -> Jaeger -> Todesstern
+planet.bereit.then(async () => { await jaegerFertig; try { await jaeger?.lade(); } catch (e) { console.warn(e.message); } stern.lade(); });
 const untertitel = erstelleUntertitel($('#text-wirt'));
 const hinweis = $('#scrollhinweis'), kopf = $('#kopf');
 
@@ -52,11 +55,9 @@ const scroll = starteScroll((p) => {
 
 	planet.lege(planetLage(p));
 
-	if (jaeger && p > K.jaegerLaden) jaeger.lade();
 	jaeger?.lege(bereich(p, ...K.jaeger));
 	if (p > K.jaeger[1] + 0.005) jaeger?.freigeben();
 
-	if (p > K.sternLaden) stern.lade();
 	stern.lege(glatt(bereich(p, ...K.stern)) * (1 - glatt(bereich(p, ...K.sternAus))), p > K.feuer);
 
 	abschluss.lege(bereich(p, ...K.abschluss));
