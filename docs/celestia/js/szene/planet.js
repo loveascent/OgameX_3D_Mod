@@ -8,8 +8,8 @@ const ABSTAND = 4.3;    // Kameraabstand in Radien
 const PLANET_URL = new URL('../../../allianz-vorschau/mods/_gemeinsam/planet/index.html', import.meta.url);
 
 const STUFEN = {
-	handy: { quality: 'phone', velRes: 96, dyeRes: 384, pixelDensity: 1, einschwingen: 800, timeScale: 0.25, autoQuality: 1 },
-	laptop: { quality: 'standard', velRes: 128, dyeRes: 768, pixelDensity: 1.25, einschwingen: 1200, timeScale: 0.25, autoQuality: 1 },
+	handy: { quality: 'phone', velRes: 96, dyeRes: 384, pixelDensity: 1, einschwingen: 800, timeScale: 1, autoQuality: 1 },
+	laptop: { quality: 'standard', velRes: 128, dyeRes: 768, pixelDensity: 1.25, einschwingen: 1200, timeScale: 1, autoQuality: 1 },
 };
 
 function fovFuer(rPx, seitePx) {
@@ -17,7 +17,7 @@ function fovFuer(rPx, seitePx) {
 	return (2 * Math.atan((seitePx / 2) * Math.tan(winkel) / rPx) * 180) / Math.PI;
 }
 
-export function erstellePlanet(wirt, { vorlage = 'Heißer Jupiter', seed = 7 } = {}) {
+export function erstellePlanet(wirt, { vorlage = 'Jupiter', seed = 7 } = {}) {
 	const klein = Math.min(innerWidth, innerHeight) < 600;
 	const stufe = klein ? STUFEN.handy : STUFEN.laptop;
 	const f = document.createElement('iframe');
