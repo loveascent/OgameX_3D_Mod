@@ -1,0 +1,71 @@
+/* Grundlage: Bühne, Ebenen, Scrollstrecke, Kopf/Hinweis, Untertitel, Ersatzseite */
+:root {
+	/* kein color-scheme: dark -- sonst bekommt der transparente Planeten-iframe einen undurchsichtigen Grund */
+	--tief: #02050b;
+	--blau: #6f9fd8;
+	--blau-hell: #a9ccf4;
+	--text: #dce6f5;
+	--gelb: #a9b968;
+	--glut: #ff9a4d;
+	--p: 0;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--tief); color: var(--text); font-family: Verdana, "Segoe UI", system-ui, sans-serif; }
+body { overflow-x: hidden; }
+
+#himmel { position: absolute; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; background: var(--tief); }
+#strecke { height: 1000vh; }
+
+#buehne { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+#planet-wirt, #stern-wirt, #jaeger-wirt, #editor-wirt, #abschluss-wirt, #text-wirt { position: absolute; inset: 0; }
+#planet-wirt { z-index: 2; } #jaeger-wirt { z-index: 4; } #stern-wirt { z-index: 3; } #editor-wirt { z-index: 5; } #abschluss-wirt { z-index: 7; } #text-wirt { z-index: 8; }
+
+.planet-embed { position: absolute; left: 0; top: 0; border: 0; background: transparent; transform-origin: 50% 50%; will-change: transform, opacity; pointer-events: none; visibility: hidden; opacity: 0; }
+
+/* Jäger (three.js-Leinwand ueber die ganze Buehne) */
+.jaeger3d { position: absolute; inset: 0; width: 100%; height: 100%; visibility: hidden; }
+
+/* Schlusstafel */
+.abschluss { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 6vw; visibility: hidden; }
+.abschluss h2 { margin: 0; font-size: clamp(34px, 7vw, 90px); letter-spacing: .12em; text-transform: uppercase; background: linear-gradient(90deg, #8cc4ff, #ffb070); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 4px 30px rgba(0,0,0,.8)); }
+.abschluss .sub { margin: .4em 0 1.4em; letter-spacing: .3em; text-transform: uppercase; font-size: clamp(11px, 1.3vw, 16px); color: #a9c3e6; }
+.abschluss ul { list-style: none; margin: 0 0 2em; padding: 0; }
+.abschluss li { font-size: clamp(18px, 2.8vw, 36px); font-weight: 700; margin: .3em 0; color: #eaf3ff; text-shadow: 0 2px 24px rgba(0,0,0,.95); }
+.abschluss .cta { display: inline-block; padding: 14px 34px; border-radius: 999px; font-weight: 700; letter-spacing: .08em; text-decoration: none; color: #fff; background: linear-gradient(90deg, #2f6fd0, #d0782f); box-shadow: 0 0 40px rgba(110,170,255,.45); }
+.abschluss .fuss { margin-top: 2.4em; font-size: 11px; max-width: 700px; }
+.abschluss .fuss a { color: #7e93b3; text-decoration: none; }
+
+/* Kopfzeile + Scrollhinweis */
+#kopf { position: absolute; z-index: 9; left: 0; right: 0; top: 0; display: flex; align-items: baseline; gap: 14px; padding: 14px 20px; opacity: 0; pointer-events: none;
+	background: linear-gradient(rgba(2,5,11,.75), transparent); }
+#kopf b { letter-spacing: .22em; font-size: 12px; color: var(--blau-hell); }
+#kopf span { font-size: 11px; color: #7e93b3; }
+#kopf nav { margin-left: auto; display: flex; gap: 8px; pointer-events: auto; }
+#kopf button { font: inherit; font-size: 11px; color: var(--blau-hell); background: rgba(20,40,70,.55); border: 1px solid rgba(110,160,220,.35); border-radius: 4px; padding: 5px 10px; cursor: pointer; }
+#kopf button:hover { background: rgba(50,90,150,.6); }
+
+#scrollhinweis { position: absolute; z-index: 9; left: 50%; bottom: 26px; transform: translateX(-50%); text-align: center; font-size: 11px; letter-spacing: .4em; text-transform: uppercase; color: #9fb8d8; }
+#scrollhinweis i { display: block; width: 1px; height: 38px; margin: 10px auto 0; background: linear-gradient(#9fb8d8, transparent); animation: tropf 2s ease-in-out infinite; }
+@keyframes tropf { 0% { transform: scaleY(0); transform-origin: top; } 50% { transform: scaleY(1); transform-origin: top; } 51% { transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
+
+/* Erzählzeilen */
+.untertitel { position: absolute; inset: 0 0 9vh 0; text-align: center; padding: 0 5vw; }
+.ut { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; opacity: 0; will-change: opacity, transform, filter; }
+.ut.oben { bottom: auto; top: 62px; }
+.ut.oben .ut-z0 { font-size: clamp(18px, 2.6vw, 34px); }
+.ut span { display: block; }
+.ut-z0 { font-size: clamp(20px, 3.3vw, 44px); font-weight: 700; letter-spacing: .02em; color: #eaf3ff; text-shadow: 0 2px 24px rgba(0,0,0,.9), 0 0 40px rgba(80,150,255,.35); }
+.ut-z1 { margin-top: .5em; font-size: clamp(13px, 1.5vw, 20px); color: #a9c3e6; text-shadow: 0 1px 12px rgba(0,0,0,.95); }
+
+/* Ohne WebGPU */
+#ersatz { display: none; }
+.ohne-webgpu #buehne, .ohne-webgpu #strecke, .ohne-webgpu #himmel { display: none; }
+.ohne-webgpu #ersatz { display: block; max-width: 900px; margin: 0 auto; padding: 8vh 20px; text-align: center; line-height: 1.6; }
+.ohne-webgpu #ersatz h1 { font-size: clamp(32px, 7vw, 72px); letter-spacing: .1em; text-transform: uppercase; background: linear-gradient(90deg, #6fb4ff, #ffa660); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.ohne-webgpu #ersatz video { width: 100%; border-radius: 8px; margin: 16px 0; }
+.ohne-webgpu #ersatz a { color: var(--blau-hell); }
+
+@media (prefers-reduced-motion: reduce) { #scrollhinweis i { animation: none; } }
+
+/* Todesstern (fertige Szene aus allianz-vorschau, iframe wie im Login) */
+.stern { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000; mix-blend-mode: screen; visibility: hidden; opacity: 0; }
