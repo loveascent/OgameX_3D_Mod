@@ -1,6 +1,6 @@
 // Schlusstafel: Titel, vier Slogans (nacheinander), Link zur Allianzseite.
 import { bereich, glatt } from '../kern/zeitleiste.js';
-import { ABSCHLUSS, ALLIANZ_URL } from './texte.js';
+import { ABSCHLUSS, ALLIANZ_URL } from './inhalt.js';
 
 export function erstelleAbschluss(wirt) {
 	const h = document.createElement('section'); h.className = 'abschluss'; h.setAttribute('aria-label', 'Allianz');

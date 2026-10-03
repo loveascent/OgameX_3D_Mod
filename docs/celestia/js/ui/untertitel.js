@@ -1,6 +1,6 @@
 // Blendet die Erzaehlzeilen je nach Scroll-Fortschritt ein und aus.
 import { fenster } from '../kern/zeitleiste.js';
-import { UNTERTITEL } from './texte.js';
+import { UNTERTITEL } from './inhalt.js';
 
 export function erstelleUntertitel(wirt) {
 	const huelle = document.createElement('div'); huelle.className = 'untertitel'; wirt.append(huelle);

@@ -9,7 +9,7 @@ import { erstellePlanet } from './szene/planet.js';
 import { erstelleJaeger3D } from './szene/jaeger3d.js';
 import { erstelleTodesstern, LAYOUT } from './szene/todesstern.js';
 import { erstelleUntertitel } from './ui/untertitel.js';
-import { erstelleAbschluss } from './ui/abschluss.js';
+import { erstelleAbschluss } from './u./schlusstafel.js';
 import { starteScroll } from './kern/scroll.js';
 import { K } from './kern/kapitel.js';
 import { bereich, glatt, ausgebremst, mix, fenster } from './kern/zeitleiste.js';
