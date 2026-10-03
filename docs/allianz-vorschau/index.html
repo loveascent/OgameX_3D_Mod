@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>World of Celestia — Todesstern-Login</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Eigener 3D-Login-Bildschirm für OGame: Todesstern, prozeduraler Planet, live in WebGPU gerendert.">
+
+<!-- Open Graph: das liest Discord/Slack/Forum beim Posten des Links aus -->
+<meta property="og:type" content="video.other">
+<meta property="og:title" content="World of Celestia — Todesstern-Login (WebGPU)">
+<meta property="og:description" content="Eigener 3D-Login-Bildschirm: Todesstern schießt auf einen prozedural erzeugten Planeten. Live gerendert, kein Video.">
+<meta property="og:url" content="https://loveascent.github.io/OgameX_3D_Mod/allianz-vorschau/">
+
+<meta property="og:image" content="https://loveascent.github.io/OgameX_3D_Mod/allianz-vorschau/poster.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="675">
+
+<meta property="og:video" content="https://loveascent.github.io/OgameX_3D_Mod/allianz-vorschau/todesstern.mp4">
+<meta property="og:video:secure_url" content="https://loveascent.github.io/OgameX_3D_Mod/allianz-vorschau/todesstern.mp4">
+<meta property="og:video:type" content="video/mp4">
+<meta property="og:video:width" content="960">
+<meta property="og:video:height" content="540">
+
+<meta name="twitter:card" content="player">
+<meta name="twitter:title" content="World of Celestia — Todesstern-Login">
+<meta name="twitter:image" content="https://loveascent.github.io/OgameX_3D_Mod/allianz-vorschau/poster.jpg">
+<meta name="twitter:player" content="https://loveascent.github.io/OgameX_3D_Mod/allianz-vorschau/">
+<meta name="twitter:player:stream" content="https://loveascent.github.io/OgameX_3D_Mod/allianz-vorschau/todesstern.mp4">
+<meta name="twitter:player:width" content="960">
+<meta name="twitter:player:height" content="540">
+
+<style>
+  :root{color-scheme:dark}
+  html,body{margin:0;height:100%;background:#05070d;color:#dce6f5;font-family:system-ui,sans-serif;overflow:hidden}
+  #hinweis{position:fixed;inset:auto 0 0 0;padding:14px 18px;font-size:13px;line-height:1.5;
+    background:linear-gradient(transparent,rgba(5,7,13,.92) 40%);text-align:center}
+  #hinweis b{color:#8fd1ff}
+  video{width:100%;height:100%;object-fit:cover;display:block}
+</style>
+</head>
+<body>
+  <!-- Platzhalter: vorgerenderter Clip für die Link-Vorschau. Später ersetzt
+       durch die echte login3d-Szene (Todesstern + Planet, live WebGPU) für
+       den Moment, wenn jemand tatsächlich klickt. -->
+  <video src="todesstern.mp4" poster="poster.jpg" autoplay muted loop playsinline></video>
+  <div id="hinweis">
+    <b>World of Celestia</b> — 3D-Login-Mod für OGame. Teil von
+    <a href="https://github.com/loveascent/OgameX_3D_Mod" style="color:#8fd1ff">OgameX_3D_Mod</a>.
+  </div>
+</body>
+</html>
