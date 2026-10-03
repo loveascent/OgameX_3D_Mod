@@ -7,13 +7,10 @@ export const K = {
 	jaegerLaden: 0.25,          // GLB im Hintergrund vorladen
 	jaeger:     [0.40, 0.57],   // Leichter Jaeger fliegt dem Betrachter entgegen
 	sternLaden: 0.45,           // Todesstern-Szene im Hintergrund vorladen
-	editorLaden: 0.60,          // Editor-Fenster im Hintergrund vorladen
 	zurEcke:    [0.57, 0.63],   // Planet rueckt nach unten links (Anordnung der Todesstern-Szene)
 	stern:      [0.58, 0.63],   // Todesstern blendet ein ...
 	feuer:       0.65,          // ... und schiesst
-	sternAus:   [0.74, 0.78],
-	editorEin:  [0.80, 0.85],   // "Planet generieren" erscheint
-	editorAus:  [0.91, 0.94],
-	planetZurueck: [0.91, 0.96],// Planet wieder gross in die Mitte
-	abschluss:  [0.94, 1.00],   // Schlusstafel mit Slogans und Link
+	sternAus:   [0.76, 0.81],
+	planetZurueck: [0.84, 0.90],// Planet wieder gross in die Mitte
+	abschluss:  [0.88, 1.00],   // Schlusstafel mit Slogans und Link
 };
