@@ -23,7 +23,7 @@ export async function erstelleJaeger3D(wirt) {
 	const unten = new THREE.DirectionalLight(0xffb070, 1.2); unten.position.set(0, -4, 2); szene.add(unten);
 
 	const halter = new THREE.Group(); szene.add(halter);
-	let modell = null, geladen = false;
+	let modell = null, geladen = false, tot = false;
 
 	function groesse() {
 		const dpr = Math.min(devicePixelRatio || 1, 2);
@@ -47,9 +47,12 @@ export async function erstelleJaeger3D(wirt) {
 	}
 
 	return {
-		element: leinwand, lade, halter, szene, kam, r,
+		element: leinwand, lade,
+		/** nach dem Flug: Grafikkarten-Speicher freigeben (der Todesstern braucht ihn danach) */
+		freigeben() { if (tot) return; tot = true; leinwand.style.visibility = 'hidden'; r.dispose(); },
 		/** t: 0..1 Flug. Der Jaeger startet klein in der Planetenmitte und zieht links am Betrachter vorbei. */
 		lege(t, mitteX, mitteY) {
+			if (tot) return;
 			const sichtbar = modell && t > 0.001 && t < 0.999;
 			leinwand.style.visibility = sichtbar ? 'visible' : 'hidden';
 			if (!sichtbar) return;

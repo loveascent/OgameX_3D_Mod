@@ -54,6 +54,7 @@ const scroll = starteScroll((p) => {
 
 	if (jaeger && p > K.jaegerLaden) jaeger.lade();
 	jaeger?.lege(bereich(p, ...K.jaeger));
+	if (p > K.jaeger[1] + 0.005) jaeger?.freigeben();
 
 	if (p > K.sternLaden) stern.lade();
 	stern.lege(glatt(bereich(p, ...K.stern)) * (1 - glatt(bereich(p, ...K.sternAus))), p > K.feuer);
