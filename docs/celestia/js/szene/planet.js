@@ -17,7 +17,7 @@ function fovFuer(rPx, seitePx) {
 	return (2 * Math.atan((seitePx / 2) * Math.tan(winkel) / rPx) * 180) / Math.PI;
 }
 
-export function erstellePlanet(wirt, { vorlage = 'Heißer Jupiter', seed = 7 } = {}) {
+export function erstellePlanet(wirt, { vorlage = 'Jupiter', seed = 7 } = {}) {
 	const klein = Math.min(innerWidth, innerHeight) < 600;
 	const stufe = klein ? STUFEN.handy : STUFEN.laptop;
 	const f = document.createElement('iframe');
