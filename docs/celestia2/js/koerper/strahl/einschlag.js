@@ -1,8 +1,7 @@
 // Einschlag am Planeten. Was ankommt, ist die Leistung von vor L/c Sekunden (strahl/verlauf.js leistungBei).
 //
 // Feuerball: Energie wird in der Atmosphäre abgelegt, die heiße Blase dehnt sich wie eine Punktexplosion
-//   (Sedov-Taylor):  r(t) = r₁ · (t / 1 s)^(2/5),   r₁ = 1 200 km
-// (Zum Vergleich: die Einschläge von Shoemaker-Levy 9 auf Jupiter 1994 warfen Fahnen von ~3 000 km Höhe auf.)
+//   (Sedov-Taylor):  r(t) = r₁ · (t / 1 s)^(2/5),   r₁ = 0,03 · R   (auf den Planetenradius bezogen, Bühnenmaßstab)
 // Temperatur: während Energie ankommt T = 2 500 K + 7 000 K · Leistung; danach Abkühlung T ← T·e^(−dt/τ), τ = 2,5 s.
 // Farbe = Schwarzkörper(T), Helligkeit ∝ T⁴ (mathe/schwarzkoerper.js).
 // Darstellung: zur Kamera gedrehte Scheibe mit weichem Rand, um r zur Kamera hin versetzt (sonst schnitte die
@@ -18,7 +17,7 @@ import { breiteLaenge } from '../../mathe/ellipsoid.js';
 import { glanzMischung } from '../../gpu/mischung.js';
 import { minus, norm, plus, mal } from '../../mathe/vektor.js';
 
-const R1 = 1200, TAU = 2.5;
+const R1 = 0.03, TAU = 2.5;
 
 export function erstelleEinschlag(szene) {
 	const farbe = uniform(new THREE.Color(0, 0, 0));
@@ -48,7 +47,7 @@ export function erstelleEinschlag(szene) {
 			const sichtbar = E && T > 1200;
 			scheibe.visible = !!sichtbar;
 			if (!sichtbar) return;
-			const r = R1 * Math.max(alter, 0.05) ** 0.4;
+			const r = R1 * welt.R * Math.max(alter, 0.05) ** 0.4;
 			const zurKamera = norm(minus(z.kamera.position.toArray(), E));
 			scheibe.position.set(...plus(E, mal(zurKamera, r)));
 			scheibe.quaternion.copy(z.kamera.quaternion);

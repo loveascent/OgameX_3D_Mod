@@ -11,18 +11,18 @@ function verweis({ text, url }, klasse) {
 }
 
 export function baueKapitel(wirt, ids) {
-	const sektionen = ids.map((id) => {
+	const sektionen = ids.map((id, nr) => {
 		const t = TEXTE[id] ?? { titel: id };
-		const s = el('section', `kapitel lage-${t.lage ?? 'mitte'}`);
+		const s = el('section', 'kapitel');
 		s.id = id; s.setAttribute('aria-hidden', 'true');
-		const kasten = el('div', id === 'start' ? 'kasten kasten-titel' : 'kasten');
+		const kasten = el('div', id === 'start' ? 'spalte spalte-titel' : 'spalte');
 		if (id === 'start') {
 			kasten.append(el('h1', 'titel', t.titel), el('p', 'unter', t.unter));
 			const ul = el('ul', 'leitsaetze');
 			for (const z of t.leitsaetze) ul.append(el('li', '', z));
 			kasten.append(ul);
 		} else {
-			kasten.append(el('h2', '', t.titel));
+			kasten.append(el('p', 'marke', `${String(nr + 1).padStart(2, '0')} — ${t.marke ?? ''}`), el('h2', '', t.titel));
 			for (const z of t.zeilen ?? []) kasten.append(el('p', '', z));
 		}
 		if (t.knopf) kasten.append(verweis(t.knopf, 'knopf'));

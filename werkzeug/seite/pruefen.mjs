@@ -19,7 +19,7 @@ mkdirSync(bilder, { recursive: true });
 
 process.env.PORT = '8291';
 await import('./server.mjs');
-const basis = 'http://localhost:8291/OgameX_3D_Mod/';
+const basis = arg('basis', 'http://localhost:8291/OgameX_3D_Mod/');   // z. B. https://loveascent.github.io/OgameX_3D_Mod/
 
 const browser = await chromium.launch({
 	executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true,
