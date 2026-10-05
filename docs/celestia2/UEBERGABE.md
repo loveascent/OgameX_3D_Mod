@@ -41,6 +41,33 @@ abschaltbar (`?aus=…`), Formeln im Code. Schnell laden, ruckelfrei, Handy bis 
 | `fremd/three/` | three 0.186.1 minifiziert (1,1 MB statt 3,7 MB) – `werkzeug/seite/three-bauen.mjs` |
 | `js/fremd/gasplanet-kern.js` | Simulator (186 KB, ohne Namen) – `werkzeug/gasplanet/bauen.mjs` |
 
+## Stand 05.10.2026 abends – vom Auftraggeber abgenommen als Basis
+
+Online: https://loveascent.github.io/OgameX_3D_Mod/celestia2/ (Commit 190a224). Ansichten „Bewerbung“ (quer) und
+„Sicherheit“ (Station nah) gefallen dem Auftraggeber. Arbeitsweise: Token sparen – erst denken/planen, dann gezielt;
+Messungen als Collage; bewährte Verfahren statt Eigenbau (Recherche erlaubt); nur auf der RTX 5080 testen.
+
+### Nächste Aufgaben (Anmerkungen des Auftraggebers, in dieser Reihenfolge)
+1. **Kein Einschwingen außerhalb des Editors.** Planet muss nach ~0,1 s sichtbar sein (gasriese.js: `vorrechnenSchritte`
+   → 0, start.js wartet nicht mehr auf `planet.bereit`). Snappy ist wichtiger als eingeschwungene Stürme.
+2. **Kein Ruckeln beim Umstellen der Qualität.** Ursachen: `baueBild()` übersetzt Shader synchron, `planet.stufe()`
+   baut Felder neu. Lösung: Bild-Pipeline vorab asynchron übersetzen (compileAsync) und erst dann tauschen; Planet
+   ohne Einschwingen; Modellwechsel bleibt wie er ist (lädt im Hintergrund, tauscht in einem Bild).
+3. **Todesstern sofort sichtbar, sobald geladen** – keine künstlichen Verzögerungen/Begrenzungen.
+4. **Projekte-Text:** „wir bauen“ raus. Die Technik (Planet, 3D-Mod, diese Seite) ist allein die Arbeit des
+   Auftraggebers, die Allianz hat damit nichts zu tun – er nutzt die Seite nur, um seine Arbeit zu testen.
+   Neu formulieren ohne „wir“, ohne Namen des Planet-Urhebers.
+5. **Milchstraßenband auf der Startseite sichtbar** (heute nur in manchen Blickrichtungen). Ohne Simulator-Patch:
+   Welt drehen (ACHSE/SONNE in welt/masse.js) bzw. Startblick so legen, dass das Band im Bild liegt.
+6. Weitere Detail-Anmerkungen folgen vom Auftraggeber.
+
+### Eigene Einschätzung (für die nächste Runde)
+- Bewerbung (quer): Station von hinten/seitlich – Iris nicht sichtbar. Besser 3/4 von vorn, damit die Waffe lesbar ist.
+- Licht: Planet in mehreren Einstellungen frontal beleuchtet (flach). Mehr Seitenlicht → Tag-/Nachtgrenze, Volumen.
+- Einschlag aus der Ferne kaum zu sehen; Kapitel „Gemeinschaft“ schwach (Station klein).
+- Hochformat: Station/Planet in Titel/Feuer/Bewerbung angeschnitten.
+- Kopfzeile doppelt zum Titel im Startkapitel.
+
 ## Stand 05.10.2026 (zweite Runde): Seite läuft
 
 Alle Bauteile sind geschrieben und laufen zusammen: Planet (Simulator mit Weltkamera), Station (lädt in 2–4 s),
