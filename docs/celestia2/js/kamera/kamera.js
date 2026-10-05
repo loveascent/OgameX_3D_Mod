@@ -1,49 +1,56 @@
-// Die Kamera: fliegt zur Einstellung des aktuellen Kapitels. Sie liest die Welt, verändert sie aber nie –
-// Simulation, Station und Strahl wissen nichts von ihr (sie bekommen sie nur zum Zeichnen).
+// Die Kamera: fährt in fester Zeit von der aktuellen Lage zur Einstellung des Kapitels. Sie liest die Welt,
+// verändert sie aber nie – Simulation, Station und Strahl wissen nichts von ihr.
 //
-// Position:  kritisch gedämpfte Feder (mathe/feder.js), ω = 2,2/s → 95 % des Wegs in ~2,2 s, egal wie weit.
-// Blick:     immer auf das Ziel der Einstellung, Ausrichtung geglättet: q ← slerp(q, q_soll, 1 − e^(−k·dt)).
-// Kollision: Die Kamera bleibt außerhalb von Station (1,6 r) und Planet (1,04 R). Liegt ein Punkt der Flugbahn
-//            innen, wird er radial auf die Schutzkugel geschoben – die Kamera fliegt außen herum statt hindurch.
-// Atmen:     langsames seitliches Pendeln, Weg = ±1,5 % des Abstands zum NÄCHSTEN Körper (Periode 90 s).
-//            Bezug ist der nächste Körper, nicht das Ziel: das Ziel kann 466 000 km entfernt sein.
-import { federVektor, feder } from '../mathe/feder.js';
+// Fahrt:  s = smootherstep(τ),  τ = (t − t₀)/DAUER,  smootherstep(x) = 6x⁵ − 15x⁴ + 10x³
+//         (Geschwindigkeit UND Beschleunigung sind am Anfang und Ende null – kein Ruck beim Anfahren/Anhalten).
+//         Lage:       p(s) = p₀ + s·(p₁ − p₀)
+//         Ausrichtung: q(s) = slerp(q₀, q₁, s)       Bildwinkel: f(s) = f₀ + s·(f₁ − f₀)
+// Ziel-Lage: Standort, Blick und Bildwinkel aus dem Kapitel (Quer-/Hochformat getrennt). Objektiv-Shift: das Bild
+//         wird optisch verschoben (setViewOffset), damit Motive rechts bzw. oben und der Text frei liegen – ohne die
+//         Kamera wegzudrehen, also ohne die Perspektive zu ändern. Shift wird mitgeblendet. Nicht je Bild – das würde „pumpen“.
+// Ruhe:   In einer Einstellung gleitet die Kamera sehr langsam auf ihr Ziel zu (2 % des Abstands zum nächsten Körper,
+//         Periode 60 s, hin und zurück) – das Bild steht nie ganz still, wackelt aber nicht.
+// Kollision: Kein Punkt der Fahrt liegt in Station (1,4 r) oder Planet (1,03 R) – sonst radial hinausgeschoben.
 import { minus, plus, mal, laenge, norm } from '../mathe/vektor.js';
-import { kameraQuat, slerp, drehe } from '../mathe/ausrichtung.js';
-import { bildwinkel } from './rahmen.js';
+import { slerp, kameraQuat } from '../mathe/ausrichtung.js';
 
-const OMEGA = 2.2, DREH_K = 3.2, ATMEN = 0.015;
+
+export const DAUER = 2.8;   // s je Fahrt
+const smootherstep = (x) => { x = Math.min(1, Math.max(0, x)); return x * x * x * (x * (6 * x - 15) + 10); };
+
+function zielLage(e, welt, k) {
+	const format = k >= 1 ? 'quer' : 'hoch';
+	const pos = e.auge(welt), vorne = norm(minus(e.ziel(welt, pos), pos));
+	return { pos, quat: kameraQuat(vorne), fov: e.fov[format], shift: e.shift[format], vorne };
+}
+
+function schutz(p, welt) {
+	for (const [m, r] of [[welt.S, welt.stationRadius * 1.4], [welt.P, welt.R * 1.03]]) {
+		const v = minus(p, m), d = laenge(v);
+		if (d < r) p = plus(m, mal(v, r / Math.max(d, 1e-6)));
+	}
+	return p;
+}
 
 export function erstelleKamera() {
-	const pos = federVektor(OMEGA), fov = feder(OMEGA, 30);
-	let quat = [0, 0, 0, 1], neu = true;
-
-	function schutz(p, welt) {
-		for (const [m, r] of [[welt.S, welt.stationRadius * 1.6], [welt.P, welt.R * 1.04]]) {
-			const v = minus(p, m), d = laenge(v);
-			if (d < r) p = plus(m, mal(v, r / Math.max(d, 1e-6)));
-		}
-		return p;
-	}
-
+	let jetzt = null, von = null, nach = null, t0 = 0, einstellung = null, verh = 0;
 	return {
-		/** Ein Schritt. einstellung: Kapitel aus welt/kapitel.js · seitenverhaeltnis: Breite/Höhe des Bildes. */
-		schritt(einstellung, welt, dt, t, seitenverhaeltnis, sofort = false) {
-			const ziel = einstellung.ziel(welt);
-			let soll = einstellung.auge(welt);
-			const naechster = Math.min(laenge(minus(soll, welt.S)), laenge(minus(soll, welt.P)) - welt.R);
-			soll = plus(soll, mal(welt.seite, ATMEN * naechster * Math.sin((2 * Math.PI * t) / 90)));
-			if (neu || sofort) { pos.setze(soll); neu = false; }
-			const roh = pos.schritt(soll, dt), p = schutz(roh, welt);
-			if (p !== roh) pos.setze(p);   // nur nach dem Wegschieben: die Feder läuft von der geschützten Lage weiter
-			const vorne = norm(minus(ziel, p));
-			const qSoll = kameraQuat(vorne, [0, 1, 0]);
-			quat = sofort ? qSoll : slerp(quat, qSoll, 1 - Math.exp(-DREH_K * dt));
-			// Bildwinkel aus der tatsächlichen Blickrichtung (nicht der gewünschten), damit die Körper wirklich drin sind
-			const v = drehe(quat, [0, 0, -1]), r = drehe(quat, [1, 0, 0]), o = drehe(quat, [0, 1, 0]);
-			const sollFov = bildwinkel(p, { vorne: v, rechts: r, oben: o }, einstellung.fov, einstellung.breite, seitenverhaeltnis, einstellung.sicht(welt));
-			if (sofort) fov.setze(sollFov);
-			return { pos: p, quat, fov: fov.schritt(sollFov, dt), vorne: v, rechts: r, oben: o };
+		/** e: Kapitel aus welt/kapitel.js · t: Zeit (s) · seitenverhaeltnis: Breite/Höhe */
+		schritt(e, welt, t, seitenverhaeltnis) {
+			if (e !== einstellung || Math.abs(seitenverhaeltnis - verh) > 1e-3) {
+				const neu = zielLage(e, welt, seitenverhaeltnis);
+				const sofort = !jetzt || e === einstellung;   // erstes Bild oder nur die Fenstergröße hat sich geändert
+				von = sofort ? neu : jetzt; nach = neu; t0 = sofort ? t - DAUER : t;
+				einstellung = e; verh = seitenverhaeltnis;
+			}
+			const s = smootherstep((t - t0) / DAUER);
+			let pos = plus(von.pos, mal(minus(nach.pos, von.pos), s));
+			const naechster = Math.max(1, Math.min(laenge(minus(pos, welt.S)) - welt.stationRadius, laenge(minus(pos, welt.P)) - welt.R));
+			pos = plus(pos, mal(nach.vorne, 0.02 * naechster * (0.5 - 0.5 * Math.cos((2 * Math.PI * t) / 60))));
+			pos = schutz(pos, welt);
+			jetzt = { pos, quat: slerp(von.quat, nach.quat, s), fov: von.fov + (nach.fov - von.fov) * s, vorne: nach.vorne,
+				shift: [0, 1].map((i) => von.shift[i] + (nach.shift[i] - von.shift[i]) * s) };
+			return jetzt;
 		},
 	};
 }
@@ -55,6 +62,8 @@ export function aufThree(kam, threeKamera, seitenverhaeltnis) {
 	threeKamera.fov = kam.fov;
 	threeKamera.aspect = seitenverhaeltnis;
 	threeKamera.near = 0.5; threeKamera.far = 1e7;
-	threeKamera.updateProjectionMatrix();
+	// Objektiv-Shift: Bildausschnitt um shift·(Breite/2, Höhe/2) verschieben – Motiv rückt nach rechts/oben
+	const B = 1000 * seitenverhaeltnis, H = 1000;
+	threeKamera.setViewOffset(B, H, -kam.shift[0] * B / 2, kam.shift[1] * H / 2, B, H);
 	threeKamera.updateMatrixWorld(true);
 }

@@ -11,6 +11,7 @@
 import * as THREE from 'three/webgpu';
 import { KAPITEL } from './welt/kapitel.js';
 import { erstelleWelt } from './welt/welt.js';
+import { MASSE } from './welt/masse.js';
 import { erstelleKamera, aufThree } from './kamera/kamera.js';
 import { erstelleTakt } from './kern/takt.js';
 import { istAn } from './kern/module.js';
@@ -27,8 +28,8 @@ erstelleBlaettern({ anzahl: ids.length, ids, punkteWirt: $('punkte'), beiWechsel
 
 const celestia = (window.celestia = { gpu: null, art: null, fehler: [] });
 let neueStufe = null;
-const qualitaet = erstelleQualitaet((werte, name, alt, grund) => { neueStufe = werte; console.info(`celestia2: Stufe ${alt} → ${name} (${grund})`); wahl?.zeige(); });
-const wahl = istAn('bedienung') ? erstelleStufenwahl($('stufen'), qualitaet) : null;
+const qualitaet = erstelleQualitaet((werte, name, alt) => { neueStufe = werte; console.info(`celestia2: Stufe ${alt} → ${name} (Wahl)`); wahl?.zeige(); });
+let wahl = null;
 
 async function welt3d() {
 	const { erstelleRenderer } = await import('./gpu/geraet.js');
@@ -38,17 +39,19 @@ async function welt3d() {
 	Object.assign(celestia, { gpu: info, art: webgpu ? 'webgpu' : 'webgl2' });
 	console.info('celestia2: GPU', info, webgpu ? 'WebGPU' : 'WebGL 2');
 
-	let stufe = qualitaet.werte;
+	let stufe = qualitaet.start(info);   // einmal, aus der Grafikkarte – vor dem Planeten
+	if (istAn('bedienung')) wahl = erstelleStufenwahl($('stufen'), qualitaet);
+	console.info('celestia2: Stufe', qualitaet.name);
 	const szene = new THREE.Scene();
 	const kamera = new THREE.PerspectiveCamera(30, 1, 0.5, 1e7);
 	const planet = istAn('planet') ? await erstellePlanet({ device, szene, qualitaet: stufe.planet }) : null;
-	const welt = erstelleWelt(planet?.radiusKm ?? 71492, planet?.abplattung ?? 0.0649);
+	const welt = erstelleWelt(MASSE.planetRadius, planet?.abplattung ?? 0.0649);
 	planet?.setzeWelt(welt);
 	const rig = erstelleKamera();
 
 	let W = 0, H = 0, dpr = 1, bild = null;
 	function groesse() {
-		W = innerWidth; H = innerHeight; dpr = pixeldichte(stufe);
+		W = innerWidth; H = innerHeight; dpr = pixeldichte(stufe, qualitaet.faktor);
 		renderer.setPixelRatio(dpr); renderer.setSize(W, H, false);
 		planet?.flaeche(W * dpr, H * dpr);
 	}
@@ -62,17 +65,16 @@ async function welt3d() {
 
 	const teile = {};   // station, strahl, hitze, einschlag – erscheinen, sobald geladen
 	const z = { dt: 0, t: 0, kapitel: KAPITEL[0], kamera, hoehePx: 1 };
-	let sofort = true, eingeblendet = false;
+	let eingeblendet = false;
 
 	const takt = erstelleTakt((dt, t) => {
-		if (neueStufe) {   // Stufenwechsel: Auflösung, Planetengitter, Bild neu; Modell evtl. nachladen
+		if (neueStufe) {   // Stufenwechsel (nur durch den Besucher): Auflösung, Planetengitter, Bild neu; Modell nachladen
 			stufe = neueStufe; neueStufe = null;
 			groesse(); planet?.stufe(stufe.planet); baueBild(); qualitaet.pause(4);
 			teile.station?.nachladen(stufe.modell);
 		}
 		Object.assign(z, { dt, t, kapitel: KAPITEL[kapitelNr], hoehePx: H * dpr });
-		aufThree(rig.schritt(z.kapitel, welt, dt, t, W / H, sofort), kamera, W / H);
-		sofort = false;
+		aufThree(rig.schritt(z.kapitel, welt, t, W / H), kamera, W / H);
 		planet?.schritt(z);
 		const st = teile.station?.schritt(welt, z);
 		if (st && teile.strahl) {
@@ -80,10 +82,10 @@ async function welt3d() {
 			teile.hitze?.schritt();
 			teile.einschlag?.schritt(welt, st, sz, planet, z);
 		}
-		if (planet && !planet.bereit) return;   // Planet schwingt noch ein: altes Bild stehen lassen
+		if (!eingeblendet && planet && !planet.bereit) return;   // erst einblenden, wenn der Planet eingeschwungen ist; danach nie anhalten
 		bild.render();
 		if (!eingeblendet) { eingeblendet = true; document.body.classList.add('welt-bereit'); qualitaet.pause(3); }
-		qualitaet.messe(dt);
+		if (qualitaet.messe(dt)) groesse();   // nur die Auflösung – kein Neuaufbau
 	});
 	takt.start();
 

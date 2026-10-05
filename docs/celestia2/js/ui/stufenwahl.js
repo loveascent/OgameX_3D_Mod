@@ -2,7 +2,8 @@
 import { STUFEN } from '../kern/qualitaet.js';
 
 export function erstelleStufenwahl(wirt, qualitaet) {
-	wirt.innerHTML = '<span class="leiste-titel">Qualität</span>';
+	wirt.innerHTML = '';
+	const anzeige = document.getElementById('qualitaet-name');
 	const knoepfe = [['auto', 'Auto'], ...Object.entries(STUFEN).map(([k, v]) => [k, v.name])].map(([k, text]) => {
 		const b = document.createElement('button');
 		b.type = 'button'; b.textContent = text; b.dataset.stufe = k;
@@ -16,6 +17,7 @@ export function erstelleStufenwahl(wirt, qualitaet) {
 			b.setAttribute('aria-pressed', String(k === 'auto' ? qualitaet.auto : !qualitaet.auto && k === qualitaet.name));
 			b.classList.toggle('laeuft', k === qualitaet.name);
 		}
+		if (anzeige) anzeige.textContent = '· ' + (qualitaet.auto ? 'Auto · ' : '') + STUFEN[qualitaet.name].name;
 	}
 	zeige();
 	return { zeige };

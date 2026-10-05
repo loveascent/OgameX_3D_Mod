@@ -23,6 +23,7 @@ export function erstelleBlaettern({ anzahl, ids, beiWechsel, punkteWirt }) {
 		i = k;
 		punkte.forEach((p, n) => p.setAttribute('aria-current', String(n === i)));
 		if (!ohneVerlauf) history.pushState(null, '', '#' + ids[i]);
+		document.body.classList.toggle('erstes-kapitel', i === 0);
 		beiWechsel(i);
 	}
 	const kannSelbstScrollen = (ziel, dy) => {

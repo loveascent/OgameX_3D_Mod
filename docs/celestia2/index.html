@@ -16,6 +16,9 @@
 <link rel="modulepreload" href="fremd/three/three.webgpu.min.js">
 <link rel="modulepreload" href="fremd/three/three.core.min.js">
 <link rel="modulepreload" href="fremd/three/three.tsl.min.js">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap">
 <link rel="stylesheet" href="css/seite.css">
 <link rel="stylesheet" href="css/kapitel.css">
 <link rel="stylesheet" href="css/bedienung.css">
@@ -24,10 +27,11 @@
 	<canvas id="leinwand" aria-hidden="true"></canvas>
 	<div id="laden" aria-hidden="true"><i></i></div>
 	<header id="kopf"><b>World of Celestia</b><span>OGame · Universum 284 (DE)</span></header>
+	<div id="schleier" aria-hidden="true"></div>
 	<main id="kapitel-wirt"></main>
 	<nav id="punkte" aria-label="Kapitel"></nav>
-	<div id="stufen" class="leiste" role="group" aria-label="Qualität"></div>
-	<p id="hinweis-blaettern" aria-hidden="true">Scrollen oder wischen</p>
+	<details id="qualitaet"><summary>Qualität <span id="qualitaet-name"></span></summary><div id="stufen" class="leiste" role="group" aria-label="Qualität"></div></details>
+	<p id="hinweis-blaettern" aria-hidden="true"><i></i>Scrollen</p>
 	<script type="module" src="js/start.js"></script>
 </body>
 </html>

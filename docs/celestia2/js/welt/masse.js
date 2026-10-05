@@ -4,8 +4,12 @@
 export const MASSE = {
 	/** Durchmesser der Station (km). Größenordnung der bekannten Kampfstationen der Science-Fiction (120–160 km). */
 	stationKm: 160,
-	/** Abstand Station → Planetenmitte in Planetenradien. 6,5 R: Planet füllt im Tele (22°) ~80 % der Bildhöhe. */
-	abstandRadien: 6.5,
+	/** Bühnenmaßstab (wie im Film): Planetenradius 4 000 km statt 71 492 km, Abstand 3,2 R. In echten Maßen wäre
+	 *  Jupiter 900-mal größer als die Station – beide zusammen groß im Bild gäbe es dann nie. Gestaucht werden nur
+	 *  diese zwei Größen; Winkel, Wege, Treffer und Licht werden in dieser Welt weiter exakt gerechnet.
+	 *  Der Simulator rechnet in Planetenradien und ist vom Maßstab unabhängig. */
+	planetRadius: 4000,
+	abstandRadien: 3.2,
 	/** Lichtgeschwindigkeit (km/s). Der Strahl ist Licht: seine Front braucht für 465 000 km ≈ 1,55 s. */
 	c: 299792.458,
 };

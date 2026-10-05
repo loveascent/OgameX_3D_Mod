@@ -1,34 +1,37 @@
-// Kapitel = Kameraeinstellungen in der Welt (reine Daten). Blättern wechselt das Kapitel, die Kamera fliegt hin.
+// Kapitel = Kameraeinstellungen in der Welt (reine Daten). Blättern wechselt das Kapitel, die Kamera fährt hin.
 // Die Welt läuft davon unabhängig weiter: Planet strömt, Station dreht, Schüsse folgen dem Feuerplan.
 //
-// Positionen werden in den natürlichen Bezugssystemen angegeben, nicht in Weltkoordinaten:
+// Gestaltungsraster: Querformat – Text links (x < −0,3), Motive rechts. Hochformat – Text unten, Motive oben.
+// Mittel dafür ist der Objektiv-Shift (wie bei Architektur- und Filmkameras): Die Kamera blickt auf das Motiv,
+// das Bild wird optisch verschoben – die Perspektive bleibt unverändert (kamera/kamera.js, setViewOffset).
+//   auge    Standort          ziel    Blickpunkt
+//   fov     senkrechter Bildwinkel (Grad) je Format     shift   Verschiebung des Motivs im Bild (−1 … 1) je Format
+//   feuer   Pause zwischen zwei Schüssen (s); fehlt = Station schießt nicht
+// Bezugssysteme:
 //   st(w, a, s, o)  Kilometer ab der Station        entlang (Achse zum Planeten, Seite, Oben)
 //   pl(w, a, s, o)  Planetenradien ab Planetenmitte  entlang derselben Achsen
-// So bleibt jede Einstellung richtig, wenn sich Planetenradius, Abstand oder Achse ändern.
-//
-//   fov     senkrechter Bildwinkel (Grad) für ein Querformat-Fenster 16:9
-//   breite  Anteil der Querformat-Breite, der auch im Hochformat sichtbar bleibt (kamera/rahmen.js)
-//   sicht   Körper, die immer ganz im Bild sein müssen: [Mittelpunkt, Radius]
-//   feuer   Feuerplan der Station: Abstand zwischen zwei Schüssen (s); fehlt = Station schießt nicht
-import { kombi } from '../mathe/vektor.js';
+//   zwischen(A, B, f)  Blick zwischen zwei Körpern (f = 0 auf A, 1 auf B)
+// Wer den Schuss sehen soll, steht SEITLICH der Waffenachse: dann läuft der Strahl quer durchs Bild.
+// Rechnerisch geprüft (Bildlage, Größe): node werkzeug/seite/kompositionen.mjs
+import { kombi, minus, norm, plus } from '../mathe/vektor.js';
 
 const st = (w, a, s, o) => kombi(w.S, [a, w.a], [s, w.seite], [o, w.oben]);
 const pl = (w, a, s, o) => kombi(w.P, [a * w.R, w.a], [s * w.R, w.seite], [o * w.R, w.oben]);
-const station = (w) => [w.S, w.stationRadius];
+const zwischen = (A, B, f) => (w, auge) => {
+	const a = norm(minus(A(w), auge)), b = norm(minus(B(w), auge));
+	return plus(auge, norm(a.map((k, i) => k * (1 - f) + b[i] * f)));
+};
+const S = (w) => w.S, P = (w) => w.P;
+const QUER = [0.32, 0], HOCH = [0, 0.3];
 
 export const KAPITEL = [
-	{ id: 'start',     auge: (w) => st(w, -2300, 380, 170), ziel: (w) => pl(w, 0, -0.32, 0.08), fov: 24, breite: 0.55,
-		sicht: (w) => [station(w)], feuer: { pause: 9 } },
-	{ id: 'aktiv',     auge: (w) => pl(w, -2.15, 1.05, 0.42), ziel: (w) => pl(w, 0, 0.32, 0.05), fov: 38, breite: 0.6, sicht: () => [] },
-	{ id: 'schutz',    auge: (w) => st(w, 210, -250, 95), ziel: (w) => st(w, 0, 25, 0), fov: 46, breite: 0.75,
-		sicht: (w) => [station(w)] },
-	{ id: 'feuer',     auge: (w) => st(w, -520, 270, 75), ziel: (w) => st(w, 1400, 0, 0), fov: 34, breite: 0.8,
-		sicht: (w) => [station(w)], feuer: { pause: 4 } },
-	{ id: 'gemeinsam', auge: (w) => st(w, -900, -1100, 620), ziel: (w) => st(w, 3000, 0, -40), fov: 36, breite: 0.7,
-		sicht: (w) => [station(w)] },
-	{ id: 'projekte',  auge: (w) => pl(w, -1.75, -0.75, -0.35), ziel: (w) => pl(w, 0, -0.28, 0), fov: 40, breite: 0.6, sicht: () => [] },
-	{ id: 'bewerben',  auge: (w) => st(w, -2000, -330, -140), ziel: (w) => pl(w, 0, 0.3, 0), fov: 26, breite: 0.55,
-		sicht: (w) => [station(w)], feuer: { pause: 7 } },
+	{ id: 'start', auge: (w) => st(w, -360, 210, 60), ziel: zwischen(S, P, 0.5), fov: { quer: 50, hoch: 80 }, shift: { quer: QUER, hoch: HOCH }, feuer: { pause: 5 } },
+	{ id: 'aktiv', auge: (w) => pl(w, -2.4, 0.7, 0.35), ziel: (w) => pl(w, 0, 0.15, 0), fov: { quer: 44, hoch: 66 }, shift: { quer: QUER, hoch: HOCH } },
+	{ id: 'schutz', auge: (w) => st(w, 260, -300, 100), ziel: S, fov: { quer: 40, hoch: 62 }, shift: { quer: QUER, hoch: HOCH } },
+	{ id: 'feuer', auge: (w) => st(w, -330, -210, -50), ziel: zwischen(S, P, 0.5), fov: { quer: 50, hoch: 80 }, shift: { quer: QUER, hoch: HOCH }, feuer: { pause: 3 } },
+	{ id: 'gemeinsam', auge: (w) => st(w, -1300, 520, 650), ziel: zwischen(S, P, 0.4), fov: { quer: 40, hoch: 62 }, shift: { quer: QUER, hoch: HOCH } },
+	{ id: 'projekte', auge: (w) => pl(w, -2.3, -0.75, -0.3), ziel: (w) => pl(w, 0, -0.15, 0), fov: { quer: 44, hoch: 66 }, shift: { quer: QUER, hoch: HOCH } },
+	{ id: 'bewerben', auge: (w) => st(w, -350, -190, 40), ziel: zwischen(S, P, 0.5), fov: { quer: 50, hoch: 80 }, shift: { quer: QUER, hoch: HOCH }, feuer: { pause: 7 } },
 ];
 
 export const kapitelIndex = (id) => Math.max(0, KAPITEL.findIndex((k) => k.id === id));

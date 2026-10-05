@@ -1,5 +1,5 @@
 // Alle sichtbaren Texte (Deutsch), je Kapitel. Die Kapitel-IDs gehören zu welt/kapitel.js (Kameraeinstellungen).
-//   lage: wo der Text steht ('mitte' | 'links' | 'rechts' | 'oben') – so wählen, dass er die Körper der Einstellung nicht verdeckt  ·  zeilen: Absätze  ·  knopf/links: Verweise
+//   marke: kleine Kapitelzeile über dem Titel  ·  lage: (nicht mehr benutzt, Raster steht in css/kapitel.css) ('mitte' | 'links' | 'rechts' | 'oben') – so wählen, dass er die Körper der Einstellung nicht verdeckt  ·  zeilen: Absätze  ·  knopf/links: Verweise
 export const ALLIANZ_URL = 'https://s284-de.ogame.gameforge.com/game/allianceInfo.php?allianceId=500192';
 export const MOD_URL = 'https://github.com/loveascent/OgameX_3D_Mod';
 
@@ -12,6 +12,7 @@ export const TEXTE = {
 		knopf: { text: 'Allianz ansehen & bewerben', url: ALLIANZ_URL },
 	},
 	aktiv: {
+		marke: 'Unser Stil',
 		lage: 'links', titel: 'Aktivität vor Highscore.',
 		zeilen: [
 			'Wer regelmäßig reinschaut, zählt bei uns mehr als wer oben in der Liste steht.',
@@ -19,6 +20,7 @@ export const TEXTE = {
 		],
 	},
 	schutz: {
+		marke: 'Sicherheit',
 		lage: 'rechts', titel: 'Wir schützen uns – immer.',
 		zeilen: [
 			'Saveflüge, Mondbau, Warnungen bei anfliegenden Flotten: Wir erklären es, bis es sitzt.',
@@ -26,13 +28,15 @@ export const TEXTE = {
 		],
 	},
 	feuer: {
+		marke: 'Verteidigung',
 		lage: 'oben', titel: 'Und wenn es sein muss …',
 		zeilen: [
 			'… antworten wir gemeinsam. Spionage, Planung, Verbandsangriff – abgesprochen statt auf eigene Faust.',
-			'Der Strahl hier ist echt gerechnet: gerade aus der Waffenachse, mit Lichtgeschwindigkeit unterwegs, 1,55 Sekunden bis zum Planeten.',
+			'Der Strahl ist gerechnet, nicht gemalt: Er verlässt die Iris exakt in der Waffenachse und endet dort, wo diese Achse die Wolkendecke trifft.',
 		],
 	},
 	gemeinsam: {
+		marke: 'Gemeinschaft',
 		lage: 'rechts', titel: 'Offen, respektvoll, gemeinsam.',
 		zeilen: [
 			'Neu in OGame oder seit Jahren dabei – Fragen sind willkommen, niemand wird von oben herab behandelt.',
@@ -40,6 +44,7 @@ export const TEXTE = {
 		],
 	},
 	projekte: {
+		marke: 'Projekte',
 		lage: 'links', titel: 'Was wir nebenbei bauen',
 		zeilen: [
 			'Gasriese in Echtzeit: Der Planet auf dieser Seite ist eine Strömungssimulation auf der Grafikkarte – Jets, Stürme und Wirbel rechnen live, auch die Spuren der Treffer.',
@@ -48,6 +53,7 @@ export const TEXTE = {
 		links: [{ text: '3D-Mod auf GitHub', url: MOD_URL }],
 	},
 	bewerben: {
+		marke: 'Bewerbung',
 		lage: 'mitte', titel: 'Dein Platz ist frei.',
 		zeilen: ['Bewerben geht direkt im Spiel: Allianz öffnen, „Bewerben“, ein paar Worte zu dir. Wir melden uns.'],
 		knopf: { text: 'Allianz ansehen & bewerben', url: ALLIANZ_URL },

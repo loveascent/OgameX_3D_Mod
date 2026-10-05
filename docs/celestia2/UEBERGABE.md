@@ -54,6 +54,7 @@ Lokaler Server: `node werkzeug/seite/server.mjs` (Port 8290), Eintrag `celestia2
 
 ## Offen
 
+0. Erledigt (05.10. Runde 3): Bühnenmaßstab (Planet 4 000 km, Abstand 3,2 R); Objektiv-Shift-Raster (Text links/unten, Motive rechts/oben), Kompositionen rechnerisch geprüft mit `node werkzeug/seite/kompositionen.mjs`; Kamerafahrten mit fester Dauer (smootherstep); keine 60-fps-Grenze; Stufe nur beim Start; Gestaltung (Space Grotesk/Inter, Schleier statt Kästen). Bildzeiten: `node werkzeug/seite/messen.mjs`.
 0. Erledigt: Austrittspunkt/Achse des Strahls werden beim Laden am Modell gemessen (Iris-Mitte (0;0;4,45), Normale +z), nicht mehr aus dem alten Modul übernommen (vorher z = 5,35). Ansehen: Doppelklick `werkzeug/seite/ansehen.cmd`.
 
 1. Kapitel `schutz` im Hochformat: Bildwinkel 103° (weit). Besser: Kamera zurückfahren statt Bildwinkel öffnen (kamera/rahmen.js).
