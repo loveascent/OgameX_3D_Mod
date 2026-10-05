@@ -1,0 +1,24 @@
+Fluid Gas Planet
+Copyright 2026 elias-nero-tron
+
+Author (idea, concept, project lead, evaluation): elias-nero-tron
+Authorship belongs to the person, not to the account. If the project moves to another
+account or organisation, this credit stays.
+
+This project is licensed under the Apache License, Version 2.0 (see LICENSE).
+Anyone redistributing this work or a derivative work must include this NOTICE file
+(section 4(d) of the license) and is asked to cite the project as described in CITATION.cff.
+
+Implemented with the help of Claude (Anthropic) as an AI programming assistant.
+
+Third-party source code: demos/planets.html contains a WGSL port of 3D simplex noise from
+webgl-noise (MIT, Copyright 2011 Ashima Arts / 2011-2022 Stefan Gustavson) and the "Hash without
+Sine" functions (MIT, Copyright 2014 David Hoskins); their license text is included in that file.
+Everything else is written for this project. Adopted methods and ideas are listed with their
+sources in CREDITS.md.
+
+---
+
+Urheber (Idee, Konzept, Projektleitung, Bewertung): elias-nero-tron
+Die Urheberschaft gilt der Person, nicht dem Konto. Wer das Werk oder ein abgeleitetes Werk
+weitergibt, muss diese NOTICE-Datei mitliefern und soll nach CITATION.cff zitieren.
