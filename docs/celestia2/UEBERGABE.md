@@ -47,7 +47,7 @@ Online: https://loveascent.github.io/OgameX_3D_Mod/celestia2/ (Commit 190a224). 
 „Sicherheit“ (Station nah) gefallen dem Auftraggeber. Arbeitsweise: Token sparen – erst denken/planen, dann gezielt;
 Messungen als Collage; bewährte Verfahren statt Eigenbau (Recherche erlaubt); nur auf der RTX 5080 testen.
 
-### Nächste Aufgaben (Anmerkungen des Auftraggebers, in dieser Reihenfolge)
+### Nächste Aufgaben (Anmerkungen des Auftraggebers, in dieser Reihenfolge) – alle älteren Anmerkungen: ANMERKUNGEN.md
 1. **Kein Einschwingen außerhalb des Editors.** Planet muss nach ~0,1 s sichtbar sein (gasriese.js: `vorrechnenSchritte`
    → 0, start.js wartet nicht mehr auf `planet.bereit`). Snappy ist wichtiger als eingeschwungene Stürme.
 2. **Kein Ruckeln beim Umstellen der Qualität.** Ursachen: `baueBild()` übersetzt Shader synchron, `planet.stufe()`
