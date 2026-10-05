@@ -2,7 +2,7 @@
 import { bereich, glatt } from '../kern/zeitleiste.js';
 import { ABSCHLUSS, ALLIANZ_URL } from './inhalt.js';
 
-const PLANET_URL = new URL('../../../allianz-vorschau/mods/_gemeinsam/planet/index.html', import.meta.url);
+const PLANET_URL = new URL('../../planet/editor.html', import.meta.url);
 const PLANETEN = ['Jupiter', 'Neptun', 'Saturn'];
 
 export function erstelleAbschluss(wirt, { planetWechsel, planetAus } = {}) {
@@ -22,7 +22,7 @@ export function erstelleAbschluss(wirt, { planetWechsel, planetAus } = {}) {
 			h.append(fenster);
 			const fr = fenster.querySelector('iframe');
 			fenster.querySelector('.zu').addEventListener('click', () => { fenster.style.display = 'none'; planetAus?.(false); });
-			fr.src = PLANET_URL + '?seed=7';
+			fr.src = PLANET_URL + '?quality=standard&seed=1';
 			fr.addEventListener('load', () => { let n = 0; const w = setInterval(() => { const sel = fr.contentDocument?.getElementById('ctl-preset'); if (sel || ++n > 100) clearInterval(w); if (sel && sel.value !== aktuell) { sel.value = aktuell; sel.dispatchEvent(new Event('change', { bubbles: true })); } }, 150); }, { once: true });
 		}
 		fenster.style.display = 'block'; planetAus?.(true);
