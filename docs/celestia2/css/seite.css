@@ -1,0 +1,37 @@
+/* Grundlage: Farben, Schrift, Bühne. Die 3D-Leinwand liegt fest hinter allem; die Seite selbst scrollt nicht. */
+:root {
+	--grund: #03050a;
+	--text: #f2f4f8;
+	--text-leise: #a9b3c6;
+	--blau: #6fb2ff;
+	--orange: #f0a36a;
+	--glas: rgba(10, 16, 30, 0.42);
+	--rand: rgba(170, 200, 255, 0.18);
+	--schatten-text: 0 2px 14px rgba(0, 0, 0, 0.85), 0 0 2px rgba(0, 0, 0, 0.9);
+	--schrift: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+	--laden: 0;
+	color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--grund); color: var(--text); font-family: var(--schrift); }
+body { overscroll-behavior: none; }
+a { color: var(--blau); }
+
+#leinwand { position: fixed; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity 1.6s ease; }
+.welt-bereit #leinwand { opacity: 1; }
+
+/* Ladebalken oben, solange die Station lädt */
+#laden { position: fixed; top: 0; left: 0; right: 0; height: 2px; pointer-events: none; }
+#laden i { display: block; height: 100%; width: calc(var(--laden) * 100%); background: linear-gradient(90deg, var(--blau), var(--orange)); transition: width .3s; }
+
+#kopf { position: fixed; top: 14px; left: 18px; display: flex; gap: 12px; align-items: baseline; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; text-shadow: var(--schatten-text); opacity: .85; z-index: 3; }
+#kopf span { color: var(--text-leise); letter-spacing: .08em; }
+
+#hinweis-blaettern { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); margin: 0; font-size: 11px; letter-spacing: .3em; text-transform: uppercase; color: var(--text-leise); opacity: .7; z-index: 3; }
+
+@media (prefers-reduced-motion: reduce) { #leinwand { transition: none; } }
+
+@media (max-width: 700px) {
+	#kopf { flex-direction: column; gap: 2px; font-size: 11px; }
+	#kopf span { font-size: 10px; }
+}

@@ -1,0 +1,17 @@
+/* Bedienelemente: Kapitelpunkte (rechts), Qualitätsleiste (unten links). */
+#punkte { position: fixed; right: 16px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 12px; z-index: 3; }
+.punkt { width: 12px; height: 12px; padding: 0; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .55); background: transparent; cursor: pointer; transition: background .3s, transform .3s; }
+.punkt[aria-current="true"] { background: var(--orange); border-color: var(--orange); transform: scale(1.3); }
+.punkt:focus-visible { outline: 2px solid var(--blau); outline-offset: 3px; }
+
+.leiste { position: fixed; left: 14px; bottom: 14px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; z-index: 3; font-size: 12px; }
+.leiste-titel { color: var(--text-leise); letter-spacing: .25em; text-transform: uppercase; font-size: 11px; margin-right: 4px; }
+.leiste button { padding: 5px 11px; border-radius: 999px; border: 1px solid var(--rand); background: rgba(12, 20, 38, .7); color: var(--text); font: inherit; cursor: pointer; }
+.leiste button[aria-pressed="true"] { background: #b8662e; border-color: #e0884a; }
+.leiste button.laeuft:not([aria-pressed="true"]) { border-color: var(--orange); }
+
+@media (max-width: 700px) {
+	#punkte { right: 8px; gap: 10px; }
+	.leiste { left: 8px; right: 8px; bottom: 8px; justify-content: center; }
+	#hinweis-blaettern { display: none; }
+}
