@@ -1,0 +1,35 @@
+/* Kapitel: alle im DOM, sichtbar nur das aktive. Lage je Kapitel: mitte / links / rechts. */
+#kapitel-wirt { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
+.kapitel { position: absolute; inset: 0; display: flex; align-items: center; padding: 70px max(16px, 5vw) 90px; opacity: 0; transform: translateY(14px); transition: opacity .7s ease, transform .7s ease; }
+.kapitel.aktiv { opacity: 1; transform: none; transition-delay: .35s; }
+.kapitel.aktiv .kasten { pointer-events: auto; }
+.lage-mitte { justify-content: center; text-align: center; }
+.lage-links { justify-content: flex-start; }
+.lage-rechts { justify-content: flex-end; }
+.lage-oben { justify-content: center; align-items: flex-start; text-align: center; }
+.lage-oben .kasten { max-width: 44rem; }
+
+.kasten { max-width: 34rem; max-height: 100%; overflow-y: auto; padding: 22px 26px; border-radius: 16px; background: var(--glas); border: 1px solid var(--rand); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.kasten h2 { margin: 0 0 12px; font-size: clamp(22px, 3vw, 34px); font-weight: 700; line-height: 1.15; text-shadow: var(--schatten-text); }
+.kasten p { margin: 0 0 10px; font-size: clamp(15px, 1.4vw, 18px); line-height: 1.6; color: var(--text); text-shadow: var(--schatten-text); }
+
+/* Titelkapitel: ohne Glaskasten, große Schrift direkt über der Welt */
+.kasten-titel { max-width: 46rem; background: none; border: 0; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.titel { margin: 0; font-size: clamp(40px, 8vw, 104px); line-height: .98; font-weight: 800; letter-spacing: .14em; text-transform: uppercase;
+	background: linear-gradient(90deg, #8cc4ff 0%, #d9dde6 50%, #f3a96e 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
+	filter: drop-shadow(0 3px 18px rgba(0, 0, 0, .7)); }
+.unter { margin: 10px 0 22px !important; font-size: 13px !important; letter-spacing: .35em; text-transform: uppercase; color: var(--text-leise) !important; }
+.leitsaetze { list-style: none; margin: 0 0 26px; padding: 0; }
+.leitsaetze li { font-size: clamp(19px, 2.6vw, 34px); font-weight: 700; line-height: 1.45; text-shadow: var(--schatten-text); }
+
+.knopf { display: inline-block; margin-top: 8px; padding: 13px 30px; border-radius: 999px; font-weight: 700; font-size: 16px; letter-spacing: .04em; color: #fff; text-decoration: none;
+	background: linear-gradient(90deg, #3a7be0, #e07a3a); box-shadow: 0 6px 24px rgba(0, 0, 0, .45); transition: transform .2s, box-shadow .2s; }
+.knopf:hover, .knopf:focus-visible { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(58, 123, 224, .45); }
+.verweise { margin-top: 14px !important; }
+.verweis { display: inline-block; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--rand); background: rgba(255, 255, 255, .06); color: var(--text); text-decoration: none; font-size: 14px; }
+
+@media (max-width: 700px) {
+	.kapitel { align-items: flex-end; padding-bottom: 96px; }
+	.lage-links, .lage-rechts { justify-content: center; }
+	.kapitel:first-child, .lage-mitte { align-items: center; }
+}
