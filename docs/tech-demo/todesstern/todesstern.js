@@ -14,7 +14,9 @@ import {
 	positionLocal, positionView, modelWorldMatrixInverse, viewportDepthTexture, perspectiveDepthToViewZ, cameraNear, cameraFar,
 	Loop, sqrt, min, length, vec2,
 } from 'three/tsl';
-import { GLTFLoader, KTX2Loader, MeshoptDecoder } from './three/zusatz.min.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
 // ---------------------------------------------------------------- Qualitätsstufen
 // dpr: max. Pixelverhältnis · lichter: Emitter-Punktlichter (Blender: 16) · blitzPunkte: Stützpunkte je Blitz
@@ -269,7 +271,7 @@ function dunstVolumen(N) {
 // ---------------------------------------------------------------- Laden
 export async function ladeTodesstern(renderer, { stufe = 'mittel', basis = './', onFortschritt, glb } = {}) {
 	const S = { ...STUFEN[stufe], ...(glb ? { glb } : {}) };
-	const ktx2 = new KTX2Loader().setTranscoderPath(new URL('./three/basis/', import.meta.url).href).detectSupport(renderer);
+	const ktx2 = new KTX2Loader().setTranscoderPath(new URL('./vendor/three-0.186.1/examples/jsm/libs/basis/', import.meta.url).href).detectSupport(renderer);
 	const loader = new GLTFLoader().setKTX2Loader(ktx2).setMeshoptDecoder(MeshoptDecoder);
 	const [gltf, blitzDaten] = await Promise.all([
 		loader.loadAsync(basis + S.glb, e => onFortschritt?.(e.loaded / (e.total || 1))),
