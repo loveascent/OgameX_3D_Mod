@@ -45,7 +45,7 @@ pipeline.outputColorTransform = false;
 pipeline.outputNode = lut3D(vec4(logv, 1), texture3D(lutTex), LUT.n, float(1));
 
 // Anordnung (Anteile von Fenster) – kommt vom Login; bis dahin nichts zeichnen
-let layout = null, erstesBild = false;
+let layout = null, erstesBild = false, strahlFaktor = 1;
 function legeAus() {
 	if (!layout) return;
 	const W = innerWidth, H = innerHeight;
@@ -58,7 +58,7 @@ function legeAus() {
 	const camW = M.invert().multiply(new THREE.Matrix4().makeTranslation(0, 0, a.dist));
 	camW.decompose(kamera.position, kamera.quaternion, kamera.scale);
 	kamera.up.set(0, 1, 0).applyQuaternion(kamera.quaternion);
-	ts.zustand.strahlMax = a.strahlMax;
+	ts.zustand.strahlMax = a.strahlMax * strahlFaktor;
 	kamera.far = a.dist * 20; kamera.updateProjectionMatrix();
 }
 addEventListener('resize', legeAus);
@@ -69,6 +69,7 @@ addEventListener('message', (e) => {
 	const d = e.data || {};
 	if (d.layout) { layout = d.layout; legeAus(); }
 	if (d.feuer) ts.feuer(uhr.getElapsed());
+	if (d.strahlFaktor) { strahlFaktor = d.strahlFaktor; legeAus(); }
 	if ('halte' in d) ts.zustand.halte = !!d.halte;   // Tech Demo: Strahl stehen lassen, bis der Mond geteilt ist
 });
 
