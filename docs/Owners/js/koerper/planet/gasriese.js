@@ -3,6 +3,8 @@
 //   - Zeichenziel: eigene Textur statt Leinwand (targetView)
 //   - Kamera:      die Weltkamera statt der Umlaufkamera des Editors (writeRender: invViewProj, Auge, Pixelwinkel)
 //   - Sonne:       die Sonne der Welt (welt/masse.js), damit Planet und Station von derselben Seite beleuchtet sind
+//   - Himmel:      Schlüssel der Milchstraße (HIMMEL). Der Simulator würfelt die Lage des Bandes aus dem Text „Seed + Vorlage“ (hier „1Jupiter“);
+//                  damit lag das Band 60° neben der Startansicht und war unsichtbar. Ein anderer Text legt es durchs Bild (Probe: himmel.mjs, ?himmel=…).
 //   - Oberfläche:  Editor-Menü, Maus, Verlauf gibt es hier nicht (leere Methoden)
 //
 // Koordinaten: Der Simulator rechnet in Planetenradien um die Planetenmitte, Achsen wie die Welt.
@@ -12,6 +14,10 @@
 //
 // Belegung des Render-Uniforms (Floats), aus writeRender des Simulators abgelesen:
 //   0–15 invViewProj · 16–19 Auge · 20–31 Zeilen Welt→Körper · 32–35 Sonne · 40 Abplattung · 57 Pixelwinkel
+/** Würfelschlüssel des Sternenhimmels: Band der Milchstraße liegt bei diesem Text in allen Kapiteln nahe der Blickrichtung (≤ 10° neben der Bildmitte; Ausnahme „zusammen“) */
+const HIMMEL = 'owners303';
+/** Stärke des Bandes: breiter (1,6) und heller (1,3) als die Simulator-Vorgabe (width 1, bright 0,85) – so liegt es sichtbar hinter Station und Planet. Proben per URL: ?breit=…&hell=… */
+const HIMMEL_WERTE = { width: 1.6, core: 1, dust: 1, hii: 1, bright: 1.3, hue: 0.5 };
 const U = { inv: 0, auge: 16, koerper: 20, sonne: 32, pxWinkel: 57 };
 
 /** Der Simulator liest beim Import einige Seitenelemente (id view, status, …). Sie werden unsichtbar bereitgestellt. */
@@ -45,6 +51,10 @@ export async function ladeGasriese(device, { qualitaet = 'phone', vorlage = 'Jup
 
 	Object.assign(S, { remember: false, paused: false, quality: qualitaet, preset: vorlage, seed: 1 });
 	const app = new Gasriese(device);
+	{
+		const q = new URLSearchParams(location.search), z = (n, v) => (q.has(n) ? Number(q.get(n)) : v);
+		app.sky.generate(q.get('himmel') ?? HIMMEL, { ...HIMMEL_WERTE, width: z('breit', HIMMEL_WERTE.width), bright: z('hell', HIMMEL_WERTE.bright), core: z('kern', HIMMEL_WERTE.core), dust: z('staub', HIMMEL_WERTE.dust) });
+	}
 	app.warmSteps = vorrechnenSchritte;   // Einschwingen: 360 Schritte = 6 s Simulationszeit (Original: 1200)
 	let textur = null, rechnet = false;
 
