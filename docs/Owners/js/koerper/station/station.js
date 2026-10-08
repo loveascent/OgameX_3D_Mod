@@ -84,7 +84,7 @@ export async function erstelleStation({ renderer, szene, kamera, welt, stufe, be
 			const lauf = ablauf(z.t - feuerZeit);
 			const korr = quatVonNach(modell.achse, [0, 0, 1]);
 			const M0 = drehe(quat ?? [0, 0, 0, 1], mal(modell.muendung, massstab));
-			const ziel = z.kapitel.feuer?.mond && z.mond ? z.mond.ziel : zielPunkt(w);   // Mond-Kapitel: das Ziel gehört dem Mond
+			const ziel = z.kapitel.feuer && z.mond ? z.mond.ziel : zielPunkt(w);   // mit Mond: Planetenmitte (Strahl liegt in der Mondbahn-Ebene)
 			const soll = quatMal(blickQuat(minus(ziel, plus(w.S, M0)), w.oben), korr);
 			if (!quat) quat = soll;
 			if (!lauf.aktiv) quat = drehBegrenzt(quat, soll, OMEGA_MAX, z.dt);
@@ -95,7 +95,7 @@ export async function erstelleStation({ renderer, szene, kamera, welt, stufe, be
 			// 2. Feuerplan des Kapitels
 			const plan = z.kapitel.feuer;
 			if (plan && !lauf.aktiv && z.t - (feuerZeit + DAUER) >= plan.pause && quatWinkel(quat, soll) < RUHIG
-				&& (!plan.mond || z.mond?.freigabe(z.t))) {
+				&& (!z.mond || z.mond.freigabe(z.t))) {   // mit Mond: nur schießen, wenn er in ~8 s den Strahl kreuzt
 				feuerZeit = z.t;
 			}
 			if (zustand.aktiv && !lauf.aktiv) zielNr++;   // Schuss vorbei: nächstes Ziel

@@ -52,7 +52,7 @@ export const TEXTE = {
 			'Dazu kommt Project Orion: über 25 neue Missionstypen, Wellenkämpfe gegen Anomalien und Teams aus bis zu fünf Kommandanten – ab 6. November in neuen Universen, ab 30. November überall.',
 		],
 	},
-	spass: {
+	bewerben: {
 		marke: 'Mitmachen',
 		titel: 'Let’s have some fun.',
 		zeilen: [
