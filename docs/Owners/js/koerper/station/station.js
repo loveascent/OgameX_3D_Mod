@@ -19,7 +19,7 @@ import { PFADE } from '../../pfade.js';
 import { blickQuat, drehBegrenzt, quatWinkel, drehe, quatMal, quatVonNach } from '../../mathe/ausrichtung.js';
 import { kombi, minus, plus, mal } from '../../mathe/vektor.js';
 import { lohntSich } from '../../kern/leitung.js';
-import { leerlauf } from '../../kern/luft.js';
+import { leerlauf, bildruhe } from '../../kern/luft.js';
 
 const HALBBREITE = 6.65;                 // Modell-Einheiten (aus den Grenzen des GLB)
 const OMEGA_MAX = 1.5 * Math.PI / 180;   // rad/s
@@ -27,15 +27,19 @@ const RUHIG = 0.05 * Math.PI / 180;      // rad
 const DREH_TROMMEL = -0.02618, DREH_RING = 0.064577;   // rad/s um +z (aus der Blender-Animation)
 const ZIELE = [[0, 0], [0.32, 0.12], [-0.28, -0.18], [0.12, -0.34], [-0.36, 0.2], [0.24, 0.3]];   // (seite, oben) · R
 
-export async function erstelleStation({ renderer, szene, kamera, welt, stufe, beiFortschritt }) {
+/** Download und Dekodieren (Web-Worker) der kleinsten Modellstufe – kann starten, bevor Planet und Welt stehen. */
+export function vorabStation(renderer, beiFortschritt) {
+	return { blitze: fetch(PFADE.blitze).then((r) => r.json()), modell: ladeModell(renderer, 'niedrig', beiFortschritt) };
+}
+
+/** vorab: Ergebnis von vorabStation (sonst wird hier geladen). kompiliere: Shader im Ziel des Bildes übersetzen (gpu/bild.js) */
+export async function erstelleStation({ renderer, szene, kamera, welt, stufe, beiFortschritt, vorab = null, kompiliere = null }) {
 	const gruppe = new THREE.Group();
 	gruppe.name = 'Station';
 	const massstab = welt.stationRadius / HALBBREITE;
 	gruppe.scale.setScalar(massstab);
-	const [blitzDaten, modell0] = await Promise.all([
-		fetch(PFADE.blitze).then((r) => r.json()),
-		ladeModell(renderer, 'niedrig', beiFortschritt),
-	]);
+	const v = vorab ?? vorabStation(renderer, beiFortschritt);
+	const [blitzDaten, modell0] = await Promise.all([v.blitze, v.modell]);
 	let modell = modell0;
 	const blitze = {
 		saeule: erstelleBlitze(blitzDaten.saeule, { amplitude: 0.13 / 2.35, feinheit: 1.1, dicke: 0.011, schein: 7, bogen: 0.38 }, stufe.blitz),
@@ -47,7 +51,7 @@ export async function erstelleStation({ renderer, szene, kamera, welt, stufe, be
 	schatten(modell.wurzel);
 	gruppe.add(modell.wurzel);
 	const licht = erstelleLicht(szene, gruppe, { lichter: stufe.lichter, schatten: stufe.schatten, stationRadius: welt.stationRadius });
-	await vorwaermen(renderer, gruppe, kamera, szene);
+	await vorwaermen(renderer, gruppe, kamera, szene, kompiliere);
 	szene.add(gruppe);
 
 	let quat = null, feuerZeit = -1e9, zielNr = 0, letzteSoll = null;
@@ -57,8 +61,9 @@ export async function erstelleStation({ renderer, szene, kamera, welt, stufe, be
 	async function wechsleModell(name) {
 		if (name === modell.stufe) return;
 		const neu = await ladeModell(renderer, name);
+		await bildruhe();
 		schatten(neu.wurzel);
-		await vorwaermen(renderer, neu.wurzel, kamera, szene);
+		await vorwaermen(renderer, neu.wurzel, kamera, szene, kompiliere);
 		// Zustand der Rotoren übernehmen, dann in einem Bild tauschen
 		neu.trommel?.rotation.copy(modell.trommel.rotation); neu.ring?.rotation.copy(modell.ring.rotation);
 		gruppe.remove(modell.wurzel); gruppe.add(neu.wurzel);

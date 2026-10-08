@@ -72,8 +72,8 @@ export async function erstellePlanet({ device, szene, qualitaet }) {
 			// invViewProj in Planetenradien: Kameramatrix mit verschobenem Auge · Projektion⁻¹
 			invTmp.copy(k.matrixWorld).setPosition(...auge).multiply(k.projectionMatrixInverse);
 			sim.kamera({ inv: invTmp.elements, auge, pxWinkel: (2 * Math.tan((k.fov * Math.PI) / 360)) / z.hoehePx });
-			if (!bereit) { bereit = sim.vorrechnen(); if (!bereit) return; }
-			sim.zeichne(z.dt);
+			if (!bereit) bereit = sim.vorrechnen();   // Einschwingen läuft in Häppchen im Hintergrund, der Planet ist dabei schon zu sehen
+			sim.zeichne(bereit ? z.dt : 0);
 			richte(tiefe, sim.koerper);
 		},
 		stufe(q) { sim.stufe(q); bereit = false; },
