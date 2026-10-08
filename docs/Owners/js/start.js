@@ -1,10 +1,12 @@
 // Einstieg: steckt die Bauteile zusammen. Hier steht keine Physik und keine Darstellung – nur die Reihenfolge.
 //
-// Laden (nichts davon blockiert die Seite):
-//   1. Texte und Bedienung sofort (HTML) – die Seite ist ab hier als Allianzseite benutzbar
-//   2. Renderer + GPU-Gerät, Planet (Simulator) – schwingt in Häppchen ein, dann wird die 3D-Welt eingeblendet
-//   3. Station (kleinste Modellstufe) im Hintergrund, vorgewärmt, dann in die Welt; Strahl, Hitze, Einschlag dazu
-//   4. Besseres Modell, wenn Stufe und gemessene Leitung es hergeben
+// Laden – strikt nacheinander, der Hauptstrang bleibt frei (gemessen mit werkzeug/seite/ladeprofil.mjs):
+//   1. Text und Bedienung (HTML) – sofort; die Texte blenden zuerst ein, ohne auf die Kamerafahrt zu warten (css/kapitel.css)
+//   2. Download + Dekodieren des kleinen Stationsmodells startet gleich (Web-Worker), parallel zum Text
+//   3. Nach dem Text: Planet mit Himmel (Simulator). Er wird schon beim Einschwingen gezeichnet; eingeblendet wird, sobald die Bilder ruhig laufen
+//   4. Erst wenn der Planet ruhig läuft: Station (Texturen bildweise auf die GPU, Shader asynchron im Ziel des Bildes übersetzt)
+//   5. Strahl, Hitze, Einschlag, Mond: gebaut und übersetzt in einer Ablage, dann in die Welt
+//   6. Besseres Modell (mittel, hoch), wenn Stufe und gemessene Leitung es hergeben – nach jedem Schritt wieder auf ruhige Bilder warten
 // Je Bild (eine Schleife, kern/takt.js):
 //   Kamera → Planet → Station → Mond → Strahl → Hitze → Einschlag → Bild → Qualitätsmessung
 // Bauteile abschalten: ?aus=station,strahl,hitze,einschlag,planet,bloom,mond (kern/module.js)
@@ -19,6 +21,7 @@ import { erstelleQualitaet, pixeldichte } from './kern/qualitaet.js';
 import { baueKapitel } from './ui/kapitel.js';
 import { erstelleBlaettern } from './ui/blaettern.js';
 import { erstelleStufenwahl } from './ui/stufenwahl.js';
+import { bildruhe } from './kern/luft.js';
 
 const $ = (id) => document.getElementById(id);
 const ids = KAPITEL.map((k) => k.id);
@@ -26,17 +29,26 @@ const ui = baueKapitel($('kapitel-wirt'), ids);
 let kapitelNr = 0;
 erstelleBlaettern({ anzahl: ids.length, ids, punkteWirt: $('punkte'), beiWechsel: (i) => { kapitelNr = i; ui.zeige(i); } });
 
-const celestia = (window.celestia = { gpu: null, art: null, fehler: [] });
+const celestia = (window.celestia = { gpu: null, art: null, fehler: [], zeit: {} });
+const marke = (n) => { celestia.zeit[n] = Math.round(performance.now()); };   // Zeitmarken für werkzeug/seite/ladeprofil.mjs
+marke('js');
 let neueStufe = null;
 const qualitaet = erstelleQualitaet((werte, name, alt) => { neueStufe = werte; console.info(`owners: Stufe ${alt} → ${name} (Wahl)`); wahl?.zeige(); });
 let wahl = null;
 
+/** Wartet, bis der Text des ersten Kapitels eingeblendet ist (höchstens 2 s). */
+const textFertig = () => new Promise((fertig) => {
+	const letzter = document.querySelector('.kapitel.aktiv .spalte > :last-child');
+	if (!letzter || matchMedia('(prefers-reduced-motion: reduce)').matches) return fertig();
+	letzter.addEventListener('transitionend', () => fertig(), { once: true });
+	setTimeout(fertig, 2000);
+});
+
 async function welt3d() {
-	const { erstelleRenderer } = await import('./gpu/geraet.js');
-	const { erstelleBild } = await import('./gpu/bild.js');
-	const { erstellePlanet } = await import('./koerper/planet/planet.js');
+	const [{ erstelleRenderer }, { erstelleBild }, { erstellePlanet }, { vorabStation, erstelleStation }] = await Promise.all([
+		import('./gpu/geraet.js'), import('./gpu/bild.js'), import('./koerper/planet/planet.js'), import('./koerper/station/station.js')]);
 	const { renderer, device, webgpu, info } = await erstelleRenderer($('leinwand'));
-	Object.assign(celestia, { gpu: info, art: webgpu ? 'webgpu' : 'webgl2' });
+	Object.assign(celestia, { gpu: info, art: webgpu ? 'webgpu' : 'webgl2' }); marke('gpu');
 	console.info('owners: GPU', info, webgpu ? 'WebGPU' : 'WebGL 2');
 
 	let stufe = qualitaet.start(info);   // einmal, aus der Grafikkarte – vor dem Planeten
@@ -44,7 +56,10 @@ async function welt3d() {
 	console.info('owners: Stufe', qualitaet.name);
 	const szene = new THREE.Scene();
 	const kamera = new THREE.PerspectiveCamera(30, 1, 0.5, 1e7);
+	const vorab = istAn('station') ? vorabStation(renderer, (f) => document.documentElement.style.setProperty('--laden', f.toFixed(3))) : null;   // Download + Dekodieren (Web-Worker) laufen schon
+	await textFertig();   // der Text kommt zuerst, ungestört – der erste Planetenaufbau übersetzt viele Shader
 	const planet = istAn('planet') ? await erstellePlanet({ device, szene, qualitaet: stufe.planet }) : null;
+	marke('planet-da');
 	const welt = erstelleWelt(MASSE.planetRadius, planet?.abplattung ?? 0.0649);
 	planet?.setzeWelt(welt);
 	const rig = erstelleKamera();
@@ -84,29 +99,39 @@ async function welt3d() {
 			teile.hitze?.schritt();
 			teile.einschlag?.schritt(welt, st, sz, planet, z);
 		}
-		if (!eingeblendet && planet && !planet.bereit) return;   // erst einblenden, wenn der Planet eingeschwungen ist; danach nie anhalten
 		bild.render();
-		if (!eingeblendet) { eingeblendet = true; document.body.classList.add('welt-bereit'); qualitaet.pause(3); }
+		if (!eingeblendet) {   // Bilder laufen unsichtbar an; eingeblendet wird erst, wenn sie ruhig kommen (sonst ruckelt die Einblendung mit)
+			eingeblendet = true; marke('erstes-bild'); qualitaet.pause(3);
+			bildruhe(12).then(() => { document.body.classList.add('welt-bereit'); marke('sichtbar'); });
+		}
 		if (qualitaet.messe(dt)) groesse();   // nur die Auflösung – kein Neuaufbau
 	});
 	takt.start();
 
+	Object.assign(celestia, { welt, teile, planet, kamera, takt, kapitel: (i) => $('punkte').children[i]?.click() });
+
 	if (istAn('station')) {
-		const { erstelleStation } = await import('./koerper/station/station.js');
-		const station = await erstelleStation({ renderer, szene, kamera, welt, stufe,
-			beiFortschritt: (f) => document.documentElement.style.setProperty('--laden', f.toFixed(3)) });
-		teile.station = station;
+		const kompiliere = (o, s) => bild.kompiliere(o, s);
+		await bildruhe(30);   // erst wenn der Planet ruhig läuft (Shader des Planeten sind dann übersetzt)
+		const station = await erstelleStation({ renderer, szene, kamera, welt, stufe, vorab, kompiliere });
+		teile.station = station; marke('station');
+		// Strahl, Hitze, Einschlag, Mond: erst bauen und Shader asynchron übersetzen (in einer Ablage), dann in die Welt – kein Ruckeln beim ersten Schuss
+		const ablage = new THREE.Group();
+		const neu = {};
 		if (istAn('strahl') && planet) {
 			const { erstelleStrahl } = await import('./koerper/strahl/strahl.js');
-			teile.strahl = erstelleStrahl(szene, station.massstab);
-			if (istAn('hitze')) teile.hitze = (await import('./koerper/strahl/hitze.js')).erstelleHitze(szene, teile.strahl, station.massstab);
-			if (istAn('einschlag')) teile.einschlag = (await import('./koerper/strahl/einschlag.js')).erstelleEinschlag(szene);
+			neu.strahl = erstelleStrahl(ablage, station.massstab);
+			if (istAn('hitze')) neu.hitze = (await import('./koerper/strahl/hitze.js')).erstelleHitze(ablage, neu.strahl, station.massstab);
+			if (istAn('einschlag')) neu.einschlag = (await import('./koerper/strahl/einschlag.js')).erstelleEinschlag(ablage);
 		}
-		if (istAn('mond')) teile.mond = (await import('./koerper/mond/mond.js')).erstelleMond(szene, welt, { stufe });
+		if (istAn('mond')) neu.mond = (await import('./koerper/mond/mond.js')).erstelleMond(ablage, welt, { stufe });
+		await bildruhe();
+		await kompiliere(ablage, szene);
+		szene.add(...ablage.children);
+		Object.assign(teile, neu); marke('mond');
 		qualitaet.pause(3);
 		station.nachladen(stufe.modell);
 	}
-	Object.assign(celestia, { welt, teile, planet, kamera, takt, kapitel: (i) => $('punkte').children[i]?.click() });
 }
 
 if (istAn('welt')) welt3d().catch((e) => {

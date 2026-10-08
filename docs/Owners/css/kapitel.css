@@ -11,6 +11,12 @@
 .kapitel.aktiv .spalte > :nth-child(3) { transition-delay: 1.06s; }
 .kapitel.aktiv .spalte > :nth-child(4) { transition-delay: 1.14s; }
 .kapitel.aktiv .spalte > :nth-child(n+5) { transition-delay: 1.22s; }
+/* Erster Besuch: Der Text kommt zuerst – ohne Warten auf die Kamerafahrt, bevor die 3D-Welt zu laden beginnt (js/start.js wartet darauf) */
+body:not(.welt-bereit) .kapitel.aktiv .spalte > :nth-child(1) { transition-delay: .05s; }
+body:not(.welt-bereit) .kapitel.aktiv .spalte > :nth-child(2) { transition-delay: .13s; }
+body:not(.welt-bereit) .kapitel.aktiv .spalte > :nth-child(3) { transition-delay: .21s; }
+body:not(.welt-bereit) .kapitel.aktiv .spalte > :nth-child(4) { transition-delay: .29s; }
+body:not(.welt-bereit) .kapitel.aktiv .spalte > :nth-child(n+5) { transition-delay: .37s; }
 
 .marke { margin: 0 0 18px; display: flex; align-items: center; gap: 12px; font: 500 12px/1 var(--titelschrift); letter-spacing: .26em; text-transform: uppercase; color: var(--akzent); }
 .marke::after { content: ""; width: 48px; height: 1px; background: currentColor; opacity: .6; }

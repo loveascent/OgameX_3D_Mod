@@ -7,7 +7,7 @@ import * as THREE from 'three/webgpu';
 import { GLTFLoader, KTX2Loader, MeshoptDecoder } from '../../../fremd/three/zusatz.min.js';
 import { PFADE } from '../../pfade.js';
 import { messe } from '../../kern/leitung.js';
-import { luft } from '../../kern/luft.js';
+import { naechstesBild } from '../../kern/luft.js';
 
 export const MODELLE = {
 	niedrig: { datei: 'todesstern_niedrig.glb', bytes: 3287372 },
@@ -57,11 +57,12 @@ function vermesseWaffe(wurzel, iris) {
 }
 
 /** Alles auf die GPU, bevor das Modell sichtbar wird. */
-export async function vorwaermen(renderer, wurzel, kamera, szene) {
+export async function vorwaermen(renderer, wurzel, kamera, szene, kompiliere = null) {
 	const texturen = new Set();
 	wurzel.traverse((o) => { for (const mat of [].concat(o.material ?? [])) for (const k in mat) if (mat[k]?.isTexture) texturen.add(mat[k]); });
-	for (const t of texturen) { renderer.initTexture(t); await luft(); }
-	await renderer.compileAsync(wurzel, kamera, szene);
+	let seit = performance.now();   // Hauptstrang-Zeit am Stück; ab 6 ms darf erst ein Bild gezeichnet werden
+	for (const t of texturen) { renderer.initTexture(t); if (performance.now() - seit > 6) { await naechstesBild(); seit = performance.now(); } }
+	await (kompiliere ? kompiliere(wurzel, szene) : renderer.compileAsync(wurzel, kamera, szene));
 }
 
 export function entsorge(wurzel) {

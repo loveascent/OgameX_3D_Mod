@@ -23,7 +23,7 @@ const zwischen = (A, B, f) => (w, auge) => {
 	return plus(auge, norm(a.map((k, i) => k * (1 - f) + b[i] * f)));
 };
 const S = (w) => w.S, P = (w) => w.P;
-const QUER = [0.32, 0], HOCH = [0, 0.3];
+const QUER = [0.26, 0], HOCH = [0, 0.3];
 
 export const KAPITEL = [
 	{ id: 'start', auge: (w) => st(w, -360, 210, 60), ziel: zwischen(S, P, 0.5), fov: { quer: 50, hoch: 80 }, shift: { quer: QUER, hoch: HOCH }, feuer: { pause: 0 } },
