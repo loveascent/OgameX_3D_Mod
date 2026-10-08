@@ -1,0 +1,24 @@
+/* Bedienung: Kapitelstriche rechts, Qualität als kleines Aufklappmenü unten rechts. */
+#punkte { position: fixed; right: var(--rand); top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 6px; z-index: 3; }
+.punkt { position: relative; width: 28px; height: 22px; padding: 0; border: 0; background: none; cursor: pointer; }
+.punkt::before { content: ""; position: absolute; right: 0; top: 10px; width: 10px; height: 1px; background: rgba(238, 241, 246, .45); transition: width .4s, background .4s; }
+.punkt[aria-current="true"]::before { width: 28px; background: var(--akzent); }
+.punkt:hover::before { width: 20px; background: var(--text); }
+.punkt:focus-visible { outline: 1px solid var(--akzent); outline-offset: 4px; }
+
+#qualitaet { position: fixed; right: var(--rand); bottom: 22px; z-index: 3; font: 500 11px/1 var(--titelschrift); letter-spacing: .18em; text-transform: uppercase; color: var(--text-leise); }
+#qualitaet summary { cursor: pointer; list-style: none; padding: 6px 0; text-align: right; }
+#qualitaet summary::-webkit-details-marker { display: none; }
+#qualitaet summary:hover, #qualitaet[open] summary { color: var(--text); }
+.leiste { position: absolute; right: 0; bottom: 30px; display: flex; flex-direction: column; gap: 2px; min-width: 160px; padding: 8px; background: rgba(6, 9, 16, .94); border: 1px solid var(--linie); }
+.leiste button { padding: 10px; border: 0; background: none; color: var(--text-leise); font: inherit; letter-spacing: inherit; text-transform: inherit; text-align: left; cursor: pointer; }
+.leiste button:hover { color: var(--text); }
+.leiste button[aria-pressed="true"] { color: var(--akzent); }
+
+@media (max-aspect-ratio: 1/1) {
+	#punkte { right: 20px; top: 20px; transform: none; flex-direction: row; gap: 2px; }
+	.punkt { width: 18px; }
+	.punkt::before { width: 8px; }
+	.punkt[aria-current="true"]::before { width: 18px; }
+	#qualitaet { right: 24px; bottom: 22px; }
+}

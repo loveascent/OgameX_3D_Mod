@@ -1,0 +1,46 @@
+/* Grundlage: Farben, Schrift, Bühne. Die 3D-Leinwand liegt fest hinter allem; die Seite selbst scrollt nicht.
+   Raster: Querformat – Textspalte links über einem Verlauf (#schleier), Motive rechts (Objektiv-Shift der Kamera).
+           Hochformat – Text unten, Motive oben. */
+:root {
+	--grund: #03050a;
+	--text: #eef1f6;
+	--text-leise: #a3adbf;
+	--akzent: #f0a36a;
+	--linie: rgba(220, 230, 255, 0.16);
+	--schrift: "Inter", "Segoe UI", system-ui, sans-serif;
+	--titelschrift: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+	--rand: clamp(24px, 6vw, 96px);
+	--laden: 0;
+	color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--grund); color: var(--text); font-family: var(--schrift); -webkit-font-smoothing: antialiased; }
+body { overscroll-behavior: none; }
+a { color: inherit; }
+
+#leinwand { position: fixed; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity 1.8s ease; }
+.welt-bereit #leinwand { opacity: 1; }
+
+/* Verlauf unter dem Text: links (quer) bzw. unten (hoch). Kein Kasten – der Text liegt frei auf dem Bild. */
+#schleier { position: fixed; inset: 0; pointer-events: none; z-index: 1;
+	background: linear-gradient(90deg, rgba(3, 5, 10, .86) 0%, rgba(3, 5, 10, .62) 26%, rgba(3, 5, 10, .18) 46%, rgba(3, 5, 10, 0) 60%); }
+
+#laden { position: fixed; top: 0; left: 0; right: 0; height: 1px; pointer-events: none; z-index: 4; }
+#laden i { display: block; height: 100%; width: calc(var(--laden) * 100%); background: var(--akzent); transition: width .3s; }
+
+#kopf { position: fixed; top: 24px; left: var(--rand); display: flex; gap: 14px; align-items: baseline; z-index: 3;
+	font: 500 12px/1 var(--titelschrift); letter-spacing: .22em; text-transform: uppercase; }
+#kopf span { color: var(--text-leise); letter-spacing: .14em; font-family: var(--schrift); font-weight: 400; }
+
+#hinweis-blaettern { position: fixed; bottom: 26px; left: var(--rand); margin: 0; display: flex; align-items: center; gap: 12px; z-index: 3;
+	font-size: 11px; letter-spacing: .3em; text-transform: uppercase; color: var(--text-leise); transition: opacity .6s; }
+#hinweis-blaettern i { display: block; width: 1px; height: 28px; background: linear-gradient(var(--text-leise), transparent); animation: tropfen 2.4s ease-in-out infinite; }
+body:not(.erstes-kapitel) #hinweis-blaettern { opacity: 0; }
+@keyframes tropfen { 0%, 100% { transform: translateY(-4px); opacity: .3; } 50% { transform: translateY(4px); opacity: 1; } }
+
+@media (max-aspect-ratio: 1/1) {
+	#schleier { background: linear-gradient(0deg, rgba(3, 5, 10, .92) 0%, rgba(3, 5, 10, .7) 30%, rgba(3, 5, 10, .2) 50%, rgba(3, 5, 10, 0) 62%); }
+	#kopf { top: 18px; flex-direction: column; gap: 6px; }
+	#hinweis-blaettern { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { #leinwand, .kapitel *, #hinweis-blaettern i { transition: none !important; animation: none !important; } }

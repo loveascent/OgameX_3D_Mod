@@ -3,7 +3,7 @@
 //   node werkzeug/seite/pruefen.mjs [--kapitel 0,3,5] [--format quer|hoch] [--warte 6] [--url-zusatz "aus=hitze"]
 // Ergebnis: werkzeug/seite/bilder/<format>-k<i>.png, Konsole und Kennzahlen auf stdout.
 import { chromium } from 'playwright-core';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -12,6 +12,9 @@ const kapitel = arg('kapitel', '0').split(',').map(Number);
 const format = arg('format', 'quer');
 const warte = Number(arg('warte', '6'));
 const zusatz = arg('url-zusatz', '');
+const seite = arg('seite', 'celestia2');   // Ordner unter docs/ (z. B. Owners)
+const serie = Number(arg('serie', '0'));   // so viele Bilder im Abstand --takt ms (danach als Collage)
+const takt = Number(arg('takt', '1500'));
 const schuss = process.argv.includes('--schuss');   // im letzten Kapitel auf einen Schuss warten und ihn in Bildern festhalten
 const groesse = format === 'hoch' ? { width: 390, height: 844 } : { width: 1600, height: 900 };
 const bilder = join(dirname(fileURLToPath(import.meta.url)), 'bilder');
@@ -30,13 +33,13 @@ const konsole = [];
 page.on('console', (m) => konsole.push(`[${m.type()}] ${m.text()}`));
 page.on('pageerror', (e) => konsole.push(`[pageerror] ${e.message}`));
 
-await page.goto(basis + 'celestia2/leer-fuer-gpu-test', { waitUntil: 'domcontentloaded' }).catch(() => {});
+await page.goto(basis + seite + '/leer-fuer-gpu-test', { waitUntil: 'domcontentloaded' }).catch(() => {});
 const gpu = await page.evaluate(async () => { const a = await navigator.gpu?.requestAdapter({ powerPreference: 'high-performance' }); return a ? { hersteller: a.info.vendor, architektur: a.info.architecture } : null; });
 console.log('GPU:', JSON.stringify(gpu));
 if (gpu?.hersteller !== 'nvidia') { console.error('ABBRUCH: nicht die NVIDIA-Karte – es wird nichts geladen.'); await browser.close(); process.exit(2); }
 
 const t0 = Date.now();
-await page.goto(basis + 'celestia2/' + (zusatz ? '?' + zusatz : ''), { waitUntil: 'load' });
+await page.goto(basis + seite + '/' + (zusatz ? '?' + zusatz : ''), { waitUntil: 'load' });
 await page.waitForFunction(() => document.body.classList.contains('welt-bereit') || document.body.classList.contains('ohne-welt'), null, { timeout: 90000 }).catch(() => konsole.push('[prüfstand] welt-bereit nicht erreicht'));
 console.log('Welt sichtbar nach', ((Date.now() - t0) / 1000).toFixed(1), 's; GPU der Seite:', JSON.stringify(await page.evaluate(() => window.celestia?.gpu)));
 await page.waitForFunction(() => !!window.celestia?.teile?.station, null, { timeout: 60000 }).catch(() => konsole.push('[prüfstand] Station nicht geladen'));
@@ -58,6 +61,25 @@ if (schuss) {
 		await page.screenshot({ path: datei });
 		console.log('Schuss', i, datei);
 	}
+}
+if (serie) {
+	const vor = Number(arg('mond-vor', '-1'));   // >= 0: erst auf den Mondschuss warten, dann diese Sekunden nach dem Auslösen mit der Serie beginnen
+	if (vor >= 0) {
+		await page.waitForFunction(() => window.celestia?.teile?.mond?.zustand === 'schnitt', null, { timeout: 120000 }).catch(() => console.log('kein Mondschuss in 120 s'));
+		await page.waitForTimeout(vor * 1000);
+	}
+	const dateien = [];
+	for (let i = 0; i < serie; i++) {
+		const datei = join(bilder, `${format}-serie${String(i).padStart(2, '0')}.png`);
+		await page.screenshot({ path: datei }); dateien.push(datei);
+		await page.waitForTimeout(takt);
+	}
+	// Collage: alle Bilder in einem (Token sparen) – Raster mit je Bild auf halbe Größe
+	const sp = Math.min(3, serie), zeilen = Math.ceil(serie / sp), b = groesse.width / 2, h = groesse.height / 2;
+	const html = '<body style="margin:0;background:#000;display:grid;grid-template-columns:repeat(' + sp + ',' + b + 'px)">' + dateien.map((d, i) => '<div style="position:relative"><img width="' + b + '" src="data:image/png;base64,' + readFileSync(d).toString('base64') + '"><i style="position:absolute;left:6px;top:4px;color:#fff;font:12px monospace">' + (i * takt / 1000).toFixed(1) + ' s</i></div>').join('') + '</body>';
+	const cp = await browser.newPage({ viewport: { width: b * sp, height: h * zeilen } });
+	await cp.setContent(html); await cp.waitForTimeout(500);
+	const col = join(bilder, `${format}-collage.png`); await cp.screenshot({ path: col }); console.log('Collage', col);
 }
 console.log(konsole.slice(-40).join('\n'));
 await browser.close();
